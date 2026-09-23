@@ -1,0 +1,11 @@
+{
+  "tiktokUsername": "flymagical330",
+  "port": 3000,
+  "roundDurationSec": 5,
+  "revealDurationSec": 6,
+  "leaderboardDurationSec": 8,
+  "leaderboardEveryNQuestions": 3,
+  "pointsForFirstCorrect": 20,
+  "requireFollowToScore": true,
+  "trivia": ""
+}

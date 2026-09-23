@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<title>Overlay Kuis Live</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #F4F0FF;
+    --ink-dim: #B9AEDE;
+    --bg-deep: #170F2E;
+    --bg-panel: #241748;
+    --pink: #FF2E76;
+    --yellow: #FFCB3C;
+    --cyan: #3FE3D0;
+    --wrong-dim: #2E2456;
+    --radius: 22px;
+    --font-display: 'Fredoka', sans-serif;
+    --font-body: 'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    font-family: var(--font-body);
+    color: var(--ink);
+    overflow: hidden;
+  }
+
+  #stage {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 48px 40px;
+    gap: 28px;
+  }
+
+  /* ---------- Question header ---------- */
+  .q-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--ink-dim);
+    font-size: 22px;
+    font-weight: 600;
+  }
+  .q-meta .chip {
+    background: var(--bg-panel);
+    border: 2px solid rgba(255,255,255,0.08);
+    border-radius: 999px;
+    padding: 6px 18px;
+  }
+  .q-meta .chip.category { color: var(--cyan); }
+
+  .question-card {
+    width: 100%;
+    max-width: 880px;
+    background: linear-gradient(160deg, var(--bg-panel), #1D1240);
+    border-radius: var(--radius);
+    padding: 36px 40px;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+    text-align: center;
+  }
+  .question-card h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 44px;
+    line-height: 1.25;
+    margin: 0;
+  }
+
+  /* ---------- Timer ---------- */
+  .timer-track {
+    width: 100%;
+    max-width: 880px;
+    height: 14px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .timer-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, var(--cyan), var(--pink));
+    transform-origin: left;
+    transition: transform linear;
+  }
+
+  /* ---------- Options ---------- */
+  .options {
+    width: 100%;
+    max-width: 880px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .option {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--bg-panel);
+    border-radius: 18px;
+    padding: 22px 24px;
+    border: 3px solid rgba(255,255,255,0.06);
+    transition: border-color 0.3s, background 0.3s, opacity 0.3s, transform 0.3s;
+  }
+  .option .letter {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    width: 44px;
+    height: 44px;
+    flex: none;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .option .text {
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+  .option.correct {
+    border-color: var(--yellow);
+    background: linear-gradient(160deg, #4A3A12, var(--bg-panel));
+    transform: scale(1.02);
+  }
+  .option.correct .letter { background: var(--yellow); color: #211407; }
+  .option.dim { opacity: 0.35; }
+
+  /* ---------- Winner banner ---------- */
+  .winner-banner {
+    max-width: 880px;
+    width: 100%;
+    background: linear-gradient(120deg, var(--pink), #FF7A45);
+    border-radius: 18px;
+    padding: 18px 28px;
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 600;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(255,46,118,0.35);
+  }
+  .winner-banner.none {
+    background: var(--bg-panel);
+    color: var(--ink-dim);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 20px;
+    box-shadow: none;
+  }
+
+  /* ---------- Leaderboard takeover ---------- */
+  #leaderboard {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 20%, #2B1A57, var(--bg-deep) 70%);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    padding: 60px 40px;
+  }
+  #leaderboard.show { display: flex; }
+  #leaderboard h2 {
+    font-family: var(--font-display);
+    font-size: 40px;
+    margin: 0;
+  }
+  #leaderboard .list {
+    width: 100%;
+    max-width: 720px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  #leaderboard .row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    background: var(--bg-panel);
+    border-radius: 16px;
+    padding: 16px 22px;
+  }
+  #leaderboard .row .rank {
+    font-family: var(--font-display);
+    font-size: 26px;
+    width: 40px;
+    color: var(--ink-dim);
+  }
+  #leaderboard .row:nth-child(1) .rank { color: var(--yellow); }
+  #leaderboard .row .name {
+    flex: 1;
+    font-size: 24px;
+    font-weight: 600;
+  }
+  #leaderboard .row .score {
+    font-family: var(--font-display);
+    font-size: 24px;
+    color: var(--cyan);
+  }
+
+  /* ---------- Toasts ---------- */
+  #toasts {
+    position: absolute;
+    bottom: 36px;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    pointer-events: none;
+  }
+  .toast {
+    max-width: 820px;
+    background: var(--bg-panel);
+    border: 2px solid var(--cyan);
+    border-radius: 14px;
+    padding: 14px 22px;
+    font-size: 20px;
+    font-weight: 600;
+    text-align: center;
+    animation: toast-in 0.25s ease-out, toast-out 0.4s ease-in 4.6s forwards;
+  }
+  .toast.follow { border-color: var(--pink); }
+
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes toast-out {
+    to { opacity: 0; transform: translateY(-8px); }
+  }
+</style>
+</head>
+<body>
+  <div id="stage">
+    <div class="q-meta">
+      <div class="chip" id="qNumber">Q1</div>
+      <div class="chip category" id="qCategory">—</div>
+    </div>
+
+    <div class="question-card">
+      <h1 id="qText">Menunggu pertanyaan berikutnya…</h1>
+    </div>
+
+    <div class="timer-track"><div class="timer-fill" id="timerFill"></div></div>
+
+    <div class="options" id="options"></div>
+
+    <div class="winner-banner none" id="winnerBanner">Belum ada yang dapat skor — jadilah yang pertama!</div>
+  </div>
+
+  <div id="leaderboard">
+    <h2 id="lbTitle">Papan Peringkat</h2>
+    <div class="list" id="lbList"></div>
+  </div>
+
+  <div id="toasts"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    const qNumber = document.getElementById("qNumber");
+    const qCategory = document.getElementById("qCategory");
+    const qText = document.getElementById("qText");
+    const optionsEl = document.getElementById("options");
+    const timerFill = document.getElementById("timerFill");
+    const winnerBanner = document.getElementById("winnerBanner");
+    const leaderboardEl = document.getElementById("leaderboard");
+    const lbTitle = document.getElementById("lbTitle");
+    const lbList = document.getElementById("lbList");
+    const toasts = document.getElementById("toasts");
+
+    let letters = ["A", "B", "C", "D"];
+
+    function renderOptions(options) {
+      optionsEl.innerHTML = "";
+      options.forEach((opt) => {
+        const el = document.createElement("div");
+        el.className = "option";
+        el.dataset.letter = opt.letter;
+        el.innerHTML = `<div class="letter">${opt.letter}</div><div class="text">${opt.text}</div>`;
+        optionsEl.appendChild(el);
+      });
+    }
+
+    function runTimer(seconds) {
+      timerFill.style.transition = "none";
+      timerFill.style.transform = "scaleX(1)";
+      // Force reflow so the transition restarts cleanly.
+      void timerFill.offsetWidth;
+      timerFill.style.transition = `transform ${seconds}s linear`;
+      timerFill.style.transform = "scaleX(0)";
+    }
+
+    function showToast(message, isFollow) {
+      const el = document.createElement("div");
+      el.className = "toast" + (isFollow ? " follow" : "");
+      el.textContent = message;
+      toasts.appendChild(el);
+      setTimeout(() => el.remove(), 5100);
+    }
+
+    function renderLeaderboard(top, title) {
+      lbTitle.textContent = title || "Papan Peringkat";
+      lbList.innerHTML = "";
+      if (!top.length) {
+        lbList.innerHTML = '<div class="row"><div class="name">Belum ada skor</div></div>';
+        return;
+      }
+      top.forEach((v, i) => {
+        const row = document.createElement("div");
+        row.className = "row";
+        row.innerHTML = `<div class="rank">${i + 1}</div><div class="name">${v.nickname}</div><div class="score">${v.score}</div>`;
+        lbList.appendChild(row);
+      });
+    }
+
+    socket.on("game:leaderboard", (top) => {
+      // Silent cache for a late-joining overlay; only shown on takeover events.
+      window.__lastLeaderboard = top;
+    });
+
+    socket.on("game:state", (payload) => {
+      switch (payload.type) {
+        case "question": {
+          leaderboardEl.classList.remove("show");
+          qNumber.textContent = `Q${payload.questionNumber}`;
+          qCategory.textContent = payload.category || "Trivia";
+          qText.textContent = payload.question;
+          renderOptions(payload.options);
+          runTimer(payload.durationSec);
+          winnerBanner.className = "winner-banner none";
+          winnerBanner.textContent = "Komentar hurufnya (A/B/C/D) untuk menjawab!";
+          break;
+        }
+
+        case "correctWinner": {
+          winnerBanner.className = "winner-banner";
+          winnerBanner.textContent = `🏆 ${payload.nickname} menjawab pertama! +${payload.pointsAwarded} → total ${payload.score}`;
+          break;
+        }
+
+        case "followAlert": {
+          showToast(payload.message, true);
+          break;
+        }
+
+        case "reveal": {
+          [...optionsEl.children].forEach((el) => {
+            if (el.dataset.letter === payload.correctLetter) {
+              el.classList.add("correct");
+              el.classList.remove("dim");
+            } else {
+              el.classList.add("dim");
+            }
+          });
+          timerFill.style.transition = "none";
+          timerFill.style.transform = "scaleX(0)";
+          if (!payload.winner) {
+            winnerBanner.className = "winner-banner none";
+            winnerBanner.textContent = "Tidak ada yang benar ronde ini!";
+          }
+          break;
+        }
+
+        case "leaderboard": {
+          renderLeaderboard(payload.top, `Pemain teratas setelah Q${payload.afterQuestion}`);
+          leaderboardEl.classList.add("show");
+          break;
+        }
+
+        case "rank": {
+          const msg = payload.found
+            ? `📊 ${payload.nickname}, kamu peringkat #${payload.rank} dari ${payload.totalPlayers} dengan ${payload.score} poin!`
+            : `📊 ${payload.nickname}, jawab pertanyaan dengan benar untuk masuk papan peringkat!`;
+          showToast(msg, false);
+          break;
+        }
+      }
+    });
+  </script>
+</body>
+</html>

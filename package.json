@@ -1,0 +1,18 @@
+{
+  "name": "tiktokgame",
+  "version": "1.0.0",
+  "description": "Game trivia real-time untuk TikTok LIVE kamu. Aplikasi ini membaca komentar penonton, menjalankan satu pertanyaan setiap beberapa detik, memberikan poin ke penonton yang **pertama** menjawab benar, menampilkan papan peringkat setiap 10 pertanyaan, dan merespons `!myrank`. Poin hanya bisa didapat kalau penonton sudah follow. Pertanyaan diambil dari API gratis [Open Trivia DB](https://opentdb.com).",
+  "main": "game.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5",
+    "tiktok-live-connector": "^2.5.0"
+  }
+}
