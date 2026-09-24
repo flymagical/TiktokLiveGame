@@ -26,7 +26,7 @@ async function main() {
   // Push every game state change straight to the overlay.
   game.on("state", (payload) => {
     io.emit("game:state", payload);
-    if (payload.type === "answer") return; // the comment itself is already logged
+    if (payload.type === "answer" || payload.type === "taps") return; // too chatty to log
     const detail =
       payload.type === "question" ? payload.question :
       payload.type === "reveal"
@@ -36,7 +36,14 @@ async function main() {
       payload.type === "followAlert" || payload.type === "powerUp" ? payload.message :
       payload.type === "goal" ? `${payload.count}/${payload.target}${payload.justReached ? " TERCAPAI!" : ""}` :
       payload.type === "mvp"
-        ? `${payload.kind}: ${payload.mvp ? payload.mvp.nickname : payload.kind === "quiz" ? "belum ada pemain" : "belum ada gifter"}` : "";
+        ? `${payload.kind}: ${payload.mvp ? payload.mvp.nickname : payload.kind === "quiz" ? "belum ada pemain" : "belum ada gifter"}` :
+      payload.type === "wordQuestion" ? `${payload.question} (${payload.letterCount} huruf)` :
+      payload.type === "wordClue" ? `huruf ke-${payload.index + 1} dibuka (${payload.source}), sisa ${payload.hiddenLeft}` :
+      payload.type === "wordReveal"
+        ? `jawaban: ${payload.answer} — ` +
+          (payload.winner ? `pemenang: ${payload.winner.nickname} +${payload.winner.pointsAwarded}` : "tidak ada pemenang")
+        :
+      payload.type === "mode" ? `${payload.mode}${payload.pending ? " (mulai soal berikutnya)" : ""}` : "";
     console.log(`[kuis] ${payload.type}`, detail);
   });
 
@@ -53,7 +60,7 @@ async function main() {
   // overlay isn't blank until the next event.
   io.on("connection", (socket) => {
     socket.emit("game:leaderboard", scoreboard.getLeaderboard(10));
-    socket.emit("game:config", { powerUps: game.getPowerUpLegend(), goal: game.getGoal() });
+    socket.emit("game:config", { powerUps: game.getPowerUpLegend(), goal: game.getGoal(), mode: game.mode });
     socket.emit("game:testing", testingMark);
   });
 
@@ -69,6 +76,14 @@ async function main() {
   });
   app.get("/lanjut", (req, res) => {
     res.type("text/plain").send(game.resume() ? "Kuis dilanjutkan." : "Kuis tidak sedang dijeda.");
+  });
+
+  // Switch the game format: /mode/tebak or /mode/pilihan (same as !mode).
+  app.get("/mode/:mode", (req, res) => {
+    const ok = game.setMode(req.params.mode);
+    res.type("text/plain").send(ok
+      ? `Mode ${req.params.mode} dipilih (berlaku mulai soal berikutnya kalau kuis sedang berjalan).`
+      : "Mode tidak dikenal. Pilih: tebak atau pilihan.");
   });
 
   app.get("/testing", (req, res) => {
@@ -108,7 +123,8 @@ async function main() {
     // The host can type !mvp (top gifter) or !mvpkuis (top quiz score) in
     // their own chat to show the matching MVP card, or !peringkat for the
     // leaderboard, !pause / !lanjut to pause and resume the quiz, !testing to
-    // toggle the "just testing" mark, or !end for the closing thank-you card.
+    // toggle the "just testing" mark, !mode tebak / !mode pilihan to switch the
+    // game format, or !end for the closing thank-you card.
     const isHost = data.username && data.username.toLowerCase() === config.tiktokUsername.toLowerCase();
     const command = (data.comment || "").trim().toLowerCase();
     if (isHost && (command === "!mvp" || command === "!mvpkuis")) {
@@ -121,6 +137,11 @@ async function main() {
     }
     if (isHost && (command === "!pause" || command === "!jeda")) {
       game.pause();
+      return;
+    }
+    const modeCommand = command.match(/^!mode (tebak|pilihan)$/);
+    if (isHost && modeCommand) {
+      game.setMode(modeCommand[1]);
       return;
     }
     if (isHost && (command === "!testing" || command === "!testing off")) {
@@ -149,6 +170,9 @@ async function main() {
     io.emit("thanks", { kind: "gift", nickname: data.nickname, giftName: data.giftName, count: data.count, image: data.image });
     game.handleGift(data);
   });
+
+  // Taps only matter in tebak mode, where they unlock letter clues.
+  tiktok.on("like", (data) => game.handleLike(data));
 
   tiktok.on("disconnected", (info) => {
     console.warn("Terputus dari TikTok LIVE:", info || "");

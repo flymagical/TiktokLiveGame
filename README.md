@@ -61,6 +61,43 @@ penonton sudah follow. Pertanyaan diambil dari API gratis
   "follow dulu untuk klaim poinmu!" — kalau dia follow sebelum ronde
   berakhir, dia tetap dapat poin (selama belum ada yang menang duluan).
 
+## Mode Tebak Kata (`tebak.html`)
+
+Format kedua dengan bank soal yang sama: penonton **mengetik jawabannya**
+langsung di komentar, dan yang terlihat hanya kotak-kotak huruf kosong,
+jadi mereka tahu berapa jumlah hurufnya.
+
+- **Setiap 50 tap** (like) selama soal berjalan, 1 huruf acak terbuka sebagai
+  clue. Huruf terakhir tidak pernah dibuka, jawaban lengkap baru muncul saat
+  waktu habis.
+- Penonton boleh menebak berkali-kali. Aturan lain sama: yang **pertama**
+  benar (dan sudah follow) dapat poin, papan peringkat, gift goal, power-up,
+  `!peringkat`, `!mvp`, `!pause`, `!end`, `!testing`.
+- Besar-kecil huruf, spasi, dan tanda baca tidak berpengaruh
+  (`bj habibie` = `B.J. Habibie`).
+- Gift **Finger Heart** (50/50 di mode pilihan ganda) di mode ini **membuka
+  1 huruf**, sekali per soal.
+- Setiap **1 Rose = 1 huruf terbuka** (kirim 3 Rose, 3 huruf terbuka), tanpa
+  batas per soal selain huruf terakhir. Rose tetap dihitung untuk gift goal
+  (5 Rose → soal berikutnya 2× poin). Ganti gift-nya lewat `"clueGift"`.
+- Hanya soal yang jawabannya bisa diketik yang dipakai (586 dari 650 soal);
+  soal "Manakah penulisan…" dan jawaban dengan simbol seperti `°` atau `%`
+  dilewati.
+
+Cara memainkan:
+
+1. Di OBS, pakai Browser Source `http://localhost:3000/tebak.html` (bukan
+   `overlay.html`). Keduanya bisa disimpan di scene berbeda.
+2. Pilih mode: ketik `!mode tebak` di chat dari akun host (atau buka
+   `http://localhost:3000/mode/tebak`). Kembali ke pilihan ganda dengan
+   `!mode pilihan`. Kalau kuis sedang berjalan, mode baru berlaku mulai soal
+   berikutnya. Mode awal saat server dijalankan diatur lewat `"mode"` di
+   `config.json`.
+3. Atur di `config.json`: `"tebak": { "roundDurationSec": 30, "tapsPerClue": 50, "clueGift": "Rose" }`.
+
+Contoh tampilan tanpa live: `tebak.html?demo`, `tebak.html?demo=pause`,
+`tebak.html?demo=end`.
+
 ## Power-up dari gift
 
 Diatur di `config.json` → `powerUps`. Nama gift dicocokkan tanpa peduli
@@ -166,9 +203,11 @@ tiktok-live-quiz/
 │  ├─ game.js                # alur pertanyaan, skor, gate follow, !myrank
 │  ├─ questions-id.js        # bank soal Bahasa Indonesia
 │  ├─ questionRotation.js    # membagi bank soal jadi 3 blok, satu blok per live
+│  ├─ wordGame.js            # aturan mode tebak kata (huruf, clue, cocokkan jawaban)
 │  └─ scores.js              # papan peringkat tersimpan (data/scores.json)
 └─ public/
-   └─ overlay.html          # overlay browser source untuk OBS
+   ├─ overlay.html          # overlay pilihan ganda (browser source OBS)
+   └─ tebak.html            # overlay tebak kata (browser source OBS)
 ```
 
 ## Kustomisasi

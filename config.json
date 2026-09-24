@@ -8,6 +8,8 @@
   "pointsForFirstCorrect": 20,
   "requireFollowToScore": true,
   "trivia": "",
+  "mode": "pilihan",
+  "tebak": { "roundDurationSec": 30, "tapsPerClue": 50, "clueGift": "Rose" },
   "powerUps": {
     "fiftyFifty": { "gift": "Finger Heart" },
     "freezeTimer": { "gift": "Ice Cream Cone", "addSec": 5, "maxPerRound": 3 },

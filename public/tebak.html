@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8" />
-<title>Overlay Kuis Live</title>
+<title>Overlay Tebak Kata</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -132,49 +132,107 @@
     transition: transform linear;
   }
 
-  /* ---------- Options ---------- */
-  .options {
+  /* ---------- Word tiles (tebak kata) ---------- */
+  .word {
     width: 100%;
     max-width: 880px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-  }
-  .option {
     display: flex;
-    align-items: center;
-    gap: 16px;
-    background: var(--bg-panel);
-    border-radius: 18px;
-    padding: 22px 24px;
-    border: 3px solid rgba(255,255,255,0.06);
-    transition: border-color 0.3s, background 0.3s, opacity 0.3s, transform 0.3s;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px 30px;
+    padding: 8px 0;
   }
-  .option .letter {
-    font-family: var(--font-display);
-    font-size: 26px;
-    font-weight: 700;
-    width: 44px;
-    height: 44px;
-    flex: none;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.08);
+  .word .w { display: flex; gap: 8px; }
+  .tile {
+    width: 58px;
+    height: 72px;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 14px;
+    background: var(--bg-panel);
+    border: 3px solid rgba(255,255,255,0.10);
+    border-bottom-width: 6px;
+    font-family: var(--font-display);
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1;
   }
-  .option .text {
-    font-size: 24px;
-    font-weight: 500;
-    line-height: 1.3;
+  .tile.hidden { color: transparent; }
+  .tile.hidden::after {
+    content: "";
+    width: 26px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.25);
+    margin-top: 34px;
   }
-  .option.correct {
-    border-color: var(--yellow);
-    background: linear-gradient(160deg, #4A3A12, var(--bg-panel));
-    transform: scale(1.02);
+  .tile.clue {
+    color: var(--cyan);
+    border-color: var(--cyan);
+    background: linear-gradient(160deg, #123D45, var(--bg-panel));
   }
-  .option.correct .letter { background: var(--yellow); color: #211407; }
-  .option.dim { opacity: 0.35; }
+  .tile.solved {
+    color: #211407;
+    border-color: #FF9F3C;
+    background: linear-gradient(160deg, var(--yellow), #FFB23C);
+  }
+  .tile.mark {
+    width: auto;
+    min-width: 18px;
+    background: none;
+    border-color: transparent;
+    color: var(--ink-dim);
+  }
+  .word.small .tile { width: 46px; height: 58px; font-size: 32px; border-radius: 12px; }
+  .word.small .tile.hidden::after { width: 20px; margin-top: 26px; }
+  .word.small .tile.mark { width: auto; }
+
+  .taps {
+    width: 100%;
+    max-width: 880px;
+    background: var(--bg-panel);
+    border: 2px solid rgba(63,227,208,0.35);
+    border-radius: 18px;
+    padding: 14px 20px 16px;
+  }
+  .taps-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .taps-head .taps-text { flex: 1; min-width: 0; }
+  .taps-head .taps-count { font-family: var(--font-display); color: var(--cyan); font-variant-numeric: tabular-nums; }
+  .taps-icon { font-size: 26px; line-height: 1; }
+  .taps-track {
+    height: 16px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .taps-fill {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, var(--cyan), #7BF5E6);
+    border-radius: 999px;
+    transition: width 0.3s ease-out;
+  }
+  .taps.maxed { border-color: rgba(255,255,255,0.08); }
+  .taps.maxed .taps-fill { background: rgba(255,255,255,0.25); }
+  .taps.bump .taps-icon { animation: bump 0.3s ease-out; }
+  .q-meta .chip.letters { color: var(--cyan); }
+
+  .mode-note {
+    max-width: 880px;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--ink-dim);
+    text-align: center;
+  }
+  .mode-note b { color: var(--yellow); }
 
   /* ---------- Winner banner ---------- */
   .winner-banner {
@@ -476,14 +534,15 @@
 
   /* ---------- Entrances & reveal motion ---------- */
   .question-card.enter { animation: card-in 0.6s cubic-bezier(.2,1.3,.4,1) both; }
-  .option.enter {
-    animation: opt-in 0.45s cubic-bezier(.2,1.3,.4,1) both;
-    animation-delay: calc(var(--i) * 90ms + 250ms);
+  .tile.enter {
+    animation: opt-in 0.4s cubic-bezier(.2,1.3,.4,1) both;
+    animation-delay: calc(var(--i) * 45ms + 250ms);
   }
-  .option.correct {
-    animation: correct-pop 0.7s cubic-bezier(.2,1.4,.4,1) both, correct-glow 1.6s ease-in-out 0.7s infinite;
+  .tile.pop { animation: correct-pop 0.6s cubic-bezier(.2,1.4,.4,1) both; }
+  .tile.solved {
+    animation: correct-pop 0.6s cubic-bezier(.2,1.4,.4,1) both;
+    animation-delay: calc(var(--i) * 60ms);
   }
-  .option.dim { animation: wrong-shake 0.45s ease-in-out; }
   .winner-banner.hint { animation: hint-bob 2.4s ease-in-out infinite; }
 
   /* ---------- Answer bubbles ---------- */
@@ -616,12 +675,6 @@
   .question-card.bonus { box-shadow: 0 0 0 3px var(--yellow), 0 18px 50px rgba(255,203,60,0.3); }
   .q-meta .chip.timer.extend { animation: extend-flash 0.8s ease-out; }
 
-  .option.eliminated {
-    opacity: 0.18;
-    filter: grayscale(1);
-    animation: eliminate 0.5s ease-in both;
-  }
-  .option.eliminated .text { text-decoration: line-through; }
 
   .goal {
     width: 100%;
@@ -922,17 +975,27 @@
       <div class="chip" id="qNumber">Q1</div>
       <div class="chip category" id="qCategory">—</div>
       <div class="chip timer" id="qTimer">⏱ —</div>
+      <div class="chip letters" id="qLetters" hidden>🔤 0 huruf</div>
       <div class="chip answers" id="qAnswers">✋ 0</div>
       <div class="chip bonus" id="qBonus" hidden></div>
     </div>
 
     <div class="question-card" id="questionCard">
-      <h1 id="qText">Menunggu pertanyaan berikutnya…</h1>
+      <h1 id="qText">Menunggu soal tebak kata berikutnya…</h1>
     </div>
 
     <div class="timer-track" id="timerTrack"><div class="timer-fill" id="timerFill"></div></div>
 
-    <div class="options" id="options"></div>
+    <div class="word" id="word"></div>
+
+    <div class="taps" id="taps" hidden>
+      <div class="taps-head">
+        <span class="taps-icon">👆</span>
+        <span class="taps-text" id="tapsText"></span>
+        <span class="taps-count" id="tapsCount"></span>
+      </div>
+      <div class="taps-track"><div class="taps-fill" id="tapsFill"></div></div>
+    </div>
 
     <div class="winner-banner none" id="winnerBanner">Belum ada yang dapat skor — jadilah yang pertama!</div>
 
@@ -1025,7 +1088,12 @@
     const qNumber = document.getElementById("qNumber");
     const qCategory = document.getElementById("qCategory");
     const qText = document.getElementById("qText");
-    const optionsEl = document.getElementById("options");
+    const wordEl = document.getElementById("word");
+    const qLetters = document.getElementById("qLetters");
+    const tapsEl = document.getElementById("taps");
+    const tapsText = document.getElementById("tapsText");
+    const tapsCount = document.getElementById("tapsCount");
+    const tapsFill = document.getElementById("tapsFill");
     const timerFill = document.getElementById("timerFill");
     const winnerBanner = document.getElementById("winnerBanner");
     const leaderboardEl = document.getElementById("leaderboard");
@@ -1089,7 +1157,7 @@
     const mvpLabel = document.getElementById("mvpLabel");
     const mvpKicker = document.getElementById("mvpKicker");
     const params = new URLSearchParams(location.search);
-    // overlay.html?card=mvp (top gifter), ?card=mvp-kuis (top quiz score) or
+    // tebak.html?card=mvp (top gifter), ?card=mvp-kuis (top quiz score) or
     // ?card=peringkat (both leaderboards) shows only that card, still and
     // silent, for saving as an image.
     const cardOnly = ["mvp", "mvp-kuis", "peringkat"].includes(params.get("card"));
@@ -1382,25 +1450,112 @@
       if (answerFeed.childElementCount >= 8) answerFeed.firstElementChild.remove();
       const el = document.createElement("div");
       el.className = "bubble";
-      el.textContent = `@${nickname} menjawab!`;
+      el.textContent = `@${nickname} menebak!`;
       el.style.left = `${15 + Math.random() * 70}%`;
       el.style.setProperty("--drift", `${Math.round((Math.random() - 0.5) * 80)}px`);
       answerFeed.appendChild(el);
       setTimeout(() => el.remove(), 2700);
     }
 
-    let letters = ["A", "B", "C", "D"];
+    // --- Word tiles ---------------------------------------------------------
+    // letters: [{ kind: "letter" | "space" | "mark", ch }], ch null = hidden.
+    let tileEls = [];
 
-    function renderOptions(options) {
-      optionsEl.innerHTML = "";
-      options.forEach((opt, i) => {
-        const el = document.createElement("div");
-        el.className = "option enter";
-        el.style.setProperty("--i", i);
-        el.dataset.letter = opt.letter;
-        el.innerHTML = `<div class="letter">${opt.letter}</div><div class="text">${opt.text}</div>`;
-        optionsEl.appendChild(el);
+    function renderWord(letters) {
+      wordEl.innerHTML = "";
+      tileEls = [];
+      const count = letters.filter((l) => l.kind === "letter").length;
+      wordEl.classList.toggle("small", count > 12);
+      let group = null;
+      letters.forEach((l, i) => {
+        if (l.kind === "space") {
+          group = null;
+          tileEls.push(null);
+          return;
+        }
+        if (!group) {
+          group = div("w");
+          wordEl.appendChild(group);
+        }
+        const tile = div(l.kind === "mark" ? "tile mark enter" : "tile enter");
+        tile.style.setProperty("--i", i);
+        setTile(tile, l);
+        group.appendChild(tile);
+        tileEls.push(tile);
       });
+    }
+
+    function setTile(tile, l) {
+      if (l.kind === "mark") {
+        tile.textContent = l.ch;
+        return;
+      }
+      tile.textContent = l.ch || "";
+      tile.classList.toggle("hidden", !l.ch);
+    }
+
+    // A clue: the tile at `index` flips to its letter.
+    function revealTile(index, ch) {
+      const tile = tileEls[index];
+      if (!tile) return;
+      tile.classList.remove("enter");
+      tile.textContent = ch;
+      tile.classList.remove("hidden");
+      tile.classList.add("clue");
+      replay(tile, "pop");
+      burstFrom(tile, { count: 26, colors: ["#3FE3D0", "#B8FFF6", "#F4F0FF"], speed: 9 });
+    }
+
+    // Time's up: every tile shows its letter, in gold.
+    function solveWord(letters) {
+      letters.forEach((l, i) => {
+        const tile = tileEls[i];
+        if (!tile || l.kind !== "letter") return;
+        tile.classList.remove("enter", "pop", "hidden", "clue");
+        tile.textContent = l.ch;
+        tile.style.setProperty("--i", i);
+        replay(tile, "solved");
+      });
+    }
+
+    let tapsPerClue = 50;
+
+    function renderTaps({ progress, perClue, maxed }) {
+      tapsPerClue = perClue || tapsPerClue;
+      tapsEl.hidden = false;
+      tapsEl.classList.toggle("maxed", !!maxed);
+      if (maxed) {
+        tapsText.textContent = "Tinggal 1 huruf lagi — tebak sekarang!";
+        tapsCount.textContent = "";
+        tapsFill.style.width = "100%";
+        return;
+      }
+      tapsText.textContent = `Tap-tap layar! Setiap ${tapsPerClue} tap = 1 huruf terbuka`;
+      tapsCount.textContent = `${progress}/${tapsPerClue}`;
+      tapsFill.style.width = `${Math.min(100, (progress / tapsPerClue) * 100)}%`;
+    }
+
+    // Back to the empty "waiting" card, e.g. right after !mode tebak.
+    function showWaiting() {
+      qNumber.textContent = "Q–";
+      qCategory.textContent = "Tebak Kata";
+      qText.textContent = "Menunggu soal tebak kata berikutnya…";
+      wordEl.innerHTML = "";
+      tapsEl.hidden = true;
+      qLetters.hidden = true;
+    }
+
+    // Shown if the server is still in multiple-choice mode.
+    function showModeNote() {
+      qNumber.textContent = "Q–";
+      qCategory.textContent = "Tebak Kata";
+      qText.textContent = "Mode pilihan ganda sedang aktif";
+      wordEl.innerHTML = "";
+      const note = div("mode-note");
+      note.innerHTML = "Host: ketik <b>!mode tebak</b> di chat untuk main tebak kata mulai soal berikutnya.";
+      wordEl.appendChild(note);
+      tapsEl.hidden = true;
+      qLetters.hidden = true;
     }
 
     // `from` is how full the bar starts (1 = full), for a time extension.
@@ -1480,7 +1635,7 @@
     }
 
     // --- Power-up legend & gift goal ---------------------------------------
-    const PU_EMOJI = { "50/50": "✂️" };
+    const PU_EMOJI = { "50/50": "✂️", "buka 1 huruf": "🔤", "+1 huruf": "🌹" };
     let goalState = null;
 
     function renderPowerUps(list) {
@@ -1656,14 +1811,20 @@
       window.__lastLeaderboard = top;
     });
 
-    socket.on("game:config", ({ powerUps, goal }) => {
+    // The demo plays its own script; the live server's settings would
+    // overwrite its legend, goal and testing mark.
+    const isDemo = params.has("demo");
+
+    socket.on("game:config", ({ powerUps, goal, mode }) => {
+      if (isDemo) return;
       renderPowerUps(powerUps);
       renderGoal(goal);
+      if (mode && mode !== "tebak" && !cardOnly) showModeNote();
     });
 
     socket.on("game:state", handleState);
     socket.on("game:testing", (on) => {
-      if (params.has("demo")) return; // demos show the mark themselves
+      if (isDemo) return;
       document.getElementById("testingMark").hidden = !on || cardOnly;
     });
 
@@ -1671,16 +1832,19 @@
 
     function handleState(payload) {
       switch (payload.type) {
-        case "question": {
+        case "wordQuestion": {
           leaderboardEl.classList.remove("show");
           pausedEl.classList.remove("show");
           qNumber.textContent = `Q${payload.questionNumber}`;
           qCategory.textContent = payload.category || "Trivia";
           qText.textContent = payload.question;
           qAnswers.textContent = "✋ 0";
+          qLetters.hidden = false;
+          qLetters.textContent = `🔤 ${payload.letterCount} huruf`;
           answerFeed.innerHTML = "";
           replay(questionCard, "enter");
-          renderOptions(payload.options);
+          renderWord(payload.letters);
+          renderTaps({ progress: 0, perClue: payload.tapsPerClue, maxed: payload.letterCount <= 1 });
           currentDurationSec = payload.durationSec;
           runTimer(payload.durationSec);
           startCountdown(payload.durationSec);
@@ -1690,24 +1854,52 @@
           questionCard.classList.toggle("bonus", bonus);
           winnerBanner.className = "winner-banner none hint";
           winnerBanner.textContent = bonus
-            ? `⚡ SOAL BONUS ${payload.multiplier}× POIN! Komentar hurufnya (A/B/C/D)!`
-            : "Komentar hurufnya (A/B/C/D) untuk menjawab!";
+            ? `⚡ SOAL BONUS ${payload.multiplier}× POIN! Ketik jawabannya (${payload.letterCount} huruf) di komentar!`
+            : `Ketik jawabannya (${payload.letterCount} huruf) di komentar!`;
           if ("goal" in payload) renderGoal(payload.goal);
           Sfx.question();
+          break;
+        }
+
+        case "wordClue": {
+          const l = payload.letters[payload.index];
+          revealTile(payload.index, l.ch);
+          if (payload.source === "taps") {
+            showToast(`👆 ${tapsPerClue} tap tercapai! 1 huruf terbuka`, false, "power");
+          }
+          Sfx.fiftyFifty();
+          break;
+        }
+
+        case "taps": {
+          renderTaps(payload);
+          replay(tapsEl, "bump");
+          break;
+        }
+
+        case "mode": {
+          renderPowerUps(payload.powerUps);
+          if (payload.mode === "tebak") {
+            showToast(payload.pending ? "🔤 Tebak kata dimulai soal berikutnya!" : "🔤 Mode tebak kata aktif!", false, "power");
+            if (!payload.pending) showWaiting();
+          } else {
+            showToast("Mode pilihan ganda dipilih — buka overlay.html untuk memainkannya.", false);
+            if (!payload.pending) showModeNote();
+          }
+          Sfx.toast();
+          break;
+        }
+
+        case "question": {
+          showModeNote();
           break;
         }
 
         case "powerUp": {
           const variant = payload.kind === "steal" ? "steal" : payload.kind === "info" ? "" : "power";
           showToast(payload.message, false, variant);
-          if (payload.kind === "fiftyFifty") {
-            [...optionsEl.children].forEach((el) => {
-              if (payload.eliminated.includes(el.dataset.letter)) {
-                el.classList.add("eliminated");
-                burstFrom(el, { count: 30, colors: ["#3FE3D0", "#F4F0FF"], speed: 10 });
-              }
-            });
-            Sfx.fiftyFifty();
+          if (payload.kind === "clue") {
+            // The tile itself animates on the wordClue event.
           } else if (payload.kind === "freeze") {
             const sec = payload.remainingMs / 1000;
             runTimer(sec, Math.min(1, sec / currentDurationSec));
@@ -1778,35 +1970,28 @@
           break;
         }
 
-        case "reveal": {
+        case "wordReveal": {
           stopCountdown();
           qTimer.textContent = "⏱ 0";
-          [...optionsEl.children].forEach((el) => {
-            if (el.dataset.letter === payload.correctLetter) {
-              el.classList.add("correct");
-              el.classList.remove("dim");
-            } else {
-              el.classList.add("dim");
-            }
-          });
+          solveWord(payload.letters);
+          tapsEl.hidden = true;
           timerFill.style.transition = "none";
           timerFill.style.transform = "scaleX(0)";
           if (payload.winner) {
             const w = payload.winner;
             winnerBanner.className = "winner-banner pop";
             const bonusNote = w.multiplier > 1 ? ` ⚡${w.multiplier}×` : "";
-            winnerBanner.textContent = `🏆 @${w.nickname} menjawab ${payload.correctLetter} benar pertama kali! +${w.pointsAwarded} poin${bonusNote} (total ${w.score})`;
-            showToast(`🎉 Selamat @${w.nickname}! Kamu yang pertama menjawab benar: ${payload.correctLetter}. ${payload.correctText}`, false, "winner");
+            winnerBanner.textContent = `🏆 @${w.nickname} menebak benar pertama kali! +${w.pointsAwarded} poin${bonusNote} (total ${w.score})`;
+            showToast(`🎉 Selamat @${w.nickname}! Jawabannya: ${payload.answer}`, false, "winner");
             Sfx.winner();
             burstFrom(winnerBanner, { count: 140, speed: 16 });
-            // Side cannons from the bottom corners.
             setTimeout(() => {
               burst(0, innerHeight, { count: 70, angle: -Math.PI / 3, spread: 0.6, speed: 26 });
               burst(innerWidth, innerHeight, { count: 70, angle: -Math.PI * 2 / 3, spread: 0.6, speed: 26 });
             }, 250);
           } else {
             winnerBanner.className = "winner-banner none";
-            winnerBanner.textContent = "Tidak ada yang benar ronde ini!";
+            winnerBanner.textContent = `Tidak ada yang benar ronde ini! Jawabannya: ${payload.answer}`;
             Sfx.noWinner();
           }
           break;
@@ -1863,25 +2048,42 @@
           showMvp({ kind: "quiz", mvp: mvp || null, runnersUp, totalPlayers, durationSec: 86400 }));
     }
 
-    // Question 2 of the demo: the host pauses it (!pause) with 7 seconds
-    // left and resumes it (!lanjut) 6 seconds later. Takes 16 seconds.
+    // --- Demo: tebak.html?demo (full), ?demo=pause, ?demo=end --------------
+    const slotsOf = (text, shown = []) => [...text].map((ch, i) =>
+      ch === " " ? { kind: "space", ch: " " } :
+      /[\p{L}\p{N}]/u.test(ch) ? { kind: "letter", ch: shown.includes(i) ? ch.toUpperCase() : null } :
+      { kind: "mark", ch });
+    const allOf = (text) => slotsOf(text, [...text].map((_, i) => i));
+
+    // Question 2 of the demo: the host pauses it (!pause) with 12 seconds
+    // left and resumes it (!lanjut) 6 seconds later. Takes 22 seconds.
     function demoPauseScene(at, start) {
+      const answer = "Jupiter";
       at(start, () => handleState({
-        type: "question", questionNumber: 2, category: "Sains", question: "Planet terbesar di tata surya adalah?",
-        options: [{ letter: "A", text: "Saturnus" }, { letter: "B", text: "Jupiter" }, { letter: "C", text: "Neptunus" }, { letter: "D", text: "Bumi" }],
-        durationSec: 10, multiplier: 2, goal: { gift: "Rose", count: 0, target: 5, multiplier: 2, reached: false }
+        type: "wordQuestion", questionNumber: 2, category: "Sains", question: "Planet terbesar di tata surya adalah?",
+        letters: slotsOf(answer), letterCount: 7, tapsPerClue: 50,
+        durationSec: 15, multiplier: 2, goal: { gift: "Rose", count: 0, target: 5, multiplier: 2, reached: false }
       }));
       ["nadia", "fajar"].forEach((nickname, i) => at(start + 1 + i * 0.8, () => handleState({ type: "answer", nickname, count: i + 1 })));
+      at(start + 2, () => handleState({ type: "taps", taps: 35, perClue: 50, progress: 35, maxed: false }));
       at(start + 3, () => handleState({ type: "paused", during: "asking" }));
-      at(start + 9, () => handleState({ type: "resumed", during: "asking", remainingMs: 7000 }));
-      ["sari_22", "ayu.m"].forEach((nickname, i) => at(start + 10 + i * 0.8, () => handleState({ type: "answer", nickname, count: i + 3 })));
-      at(start + 16, () => handleState({ type: "reveal", correctLetter: "B", correctText: "Jupiter", winner: { nickname: "nadia", pointsAwarded: 40, score: 81, multiplier: 2 } }));
+      at(start + 9, () => handleState({ type: "resumed", during: "asking", remainingMs: 12000 }));
+      at(start + 10, () => handleState({ type: "wordClue", source: "taps", index: 0, letters: slotsOf(answer, [0]), hiddenLeft: 6 }));
+      at(start + 10, () => handleState({ type: "taps", taps: 58, perClue: 50, progress: 8, maxed: false }));
+      ["sari_22", "ayu.m"].forEach((nickname, i) => at(start + 12 + i * 0.8, () => handleState({ type: "answer", nickname, count: i + 3 })));
+      at(start + 21, () => handleState({ type: "wordReveal", answer, letters: allOf(answer), winner: { nickname: "nadia", pointsAwarded: 40, score: 81, multiplier: 2 } }));
     }
+
+    const demoLegend = [
+      { gift: "Finger Heart", label: "buka 1 huruf" },
+      { gift: "Ice Cream Cone", label: "+5 detik" },
+      { gift: "Hand Hearts", label: "curi 1 poin #1" },
+      { gift: "Rose", label: "+1 huruf" }
+    ];
 
     // Every demo shows the "just testing" mark (!testing).
     if (params.has("demo")) document.getElementById("testingMark").hidden = false;
 
-    // overlay.html?demo=end shows the closing card (!end).
     if (params.get("demo") === "end") {
       setTimeout(() => handleState({
         type: "endCard", host: "flymagical330",
@@ -1890,37 +2092,39 @@
       }), 500);
     } else if (params.get("demo") === "pause") {
       const at = (sec, fn) => setTimeout(fn, sec * 1000);
-      renderPowerUps([
-        { gift: "Finger Heart", label: "50/50" },
-        { gift: "Ice Cream Cone", label: "+5 detik" },
-        { gift: "Hand Hearts", label: "curi 1 poin #1" }
-      ]);
+      renderPowerUps(demoLegend);
       demoPauseScene(at, 0.5);
     } else if (params.has("demo")) {
       const at = (sec, fn) => setTimeout(fn, sec * 1000);
       const players = ["rizki.k", "andi.demo", "sari_22", "budi.santoso", "nadia", "ayu.m", "fajar"];
+      const answer = "Canberra";
       at(0.5, () => handleState({
-        type: "question", questionNumber: 1, category: "Geografi", question: "Apa ibu kota Australia?",
-        options: [{ letter: "A", text: "Sydney" }, { letter: "B", text: "Melbourne" }, { letter: "C", text: "Canberra" }, { letter: "D", text: "Perth" }],
-        durationSec: 12
+        type: "wordQuestion", questionNumber: 1, category: "Geografi", question: "Apa ibu kota Australia?",
+        letters: slotsOf(answer), letterCount: 8, tapsPerClue: 50, durationSec: 20
       }));
       const goal = (count, extra) => ({ type: "goal", gift: "Rose", count, target: 5, multiplier: 2, reached: count >= 5, ...extra });
-      renderPowerUps([
-        { gift: "Finger Heart", label: "50/50" },
-        { gift: "Ice Cream Cone", label: "+5 detik" },
-        { gift: "Hand Hearts", label: "curi 1 poin #1" }
-      ]);
+      renderPowerUps(demoLegend);
       renderGoal(goal(0));
-      players.forEach((nickname, i) => at(2 + i * 0.9, () => handleState({ type: "answer", nickname, count: i + 1 })));
-      at(3, () => handleState(goal(2, { nickname: "nadia" })));
-      at(4.5, () => handleState({ type: "powerUp", kind: "fiftyFifty", nickname: "fajar", eliminated: ["A", "D"], message: "✂️ 50/50! @fajar menghapus 2 jawaban salah" }));
-      at(6, () => handleState({ type: "powerUp", kind: "freeze", nickname: "ayu.m", addedSec: 5, remainingMs: 11500, usesLeft: 2, message: "⏳ @ayu.m menambah waktu +5 detik! (sisa 2× lagi)" }));
-      at(8, () => handleState(goal(5, { justReached: true, nickname: "budi.santoso" })));
-      at(17.5, () => handleState({ type: "reveal", correctLetter: "C", correctText: "Canberra", winner: { nickname: "rizki.k", pointsAwarded: 20, score: 60, multiplier: 1 } }));
-      at(19, () => handleState({ type: "followAlert", message: "@andi.demo jawabannya benar, tapi belum follow — follow dulu supaya poinmu dihitung!" }));
-      at(21, () => handleState({ type: "powerUp", kind: "steal", nickname: "nadia", victim: "rizki.k", points: 1, message: "🦹 @nadia mencuri 1 poin dari @rizki.k (#1)!" }));
-      at(22, () => enqueueThanks({ kind: "follow", nickname: "sari_22" }));
-      at(26.5, () => enqueueThanks({ kind: "gift", nickname: "budi.santoso", giftName: "Rose", count: 30, image: null }));
+      players.forEach((nickname, i) => at(2 + i * 1.1, () => handleState({ type: "answer", nickname, count: i + 1 })));
+      // Taps pile up; every 50 opens a letter.
+      [[1.5, 18], [2.5, 34], [3.5, 47]].forEach(([t, n]) => at(t, () => handleState({ type: "taps", taps: n, perClue: 50, progress: n, maxed: false })));
+      at(4.2, () => handleState({ type: "wordClue", source: "taps", index: 2, letters: slotsOf(answer, [2]), hiddenLeft: 7 }));
+      at(4.2, () => handleState({ type: "taps", taps: 52, perClue: 50, progress: 2, maxed: false }));
+      at(5, () => handleState(goal(2, { nickname: "nadia" })));
+      at(6.5, () => handleState({ type: "wordClue", source: "gift", nickname: "fajar", index: 5, letters: slotsOf(answer, [2, 5]), hiddenLeft: 6 }));
+      at(6.5, () => handleState({ type: "powerUp", kind: "clue", nickname: "fajar", message: "🔤 @fajar membuka 1 huruf!" }));
+      [[7.5, 27], [8.5, 41]].forEach(([t, n]) => at(t, () => handleState({ type: "taps", taps: 50 + n, perClue: 50, progress: n, maxed: false })));
+      at(9, () => handleState({ type: "powerUp", kind: "freeze", nickname: "ayu.m", addedSec: 5, remainingMs: 16500, usesLeft: 2, message: "⏳ @ayu.m menambah waktu +5 detik! (sisa 2× lagi)" }));
+      at(10, () => handleState({ type: "wordClue", source: "taps", index: 0, letters: slotsOf(answer, [0, 2, 5]), hiddenLeft: 5 }));
+      at(10, () => handleState({ type: "taps", taps: 103, perClue: 50, progress: 3, maxed: false }));
+      at(11, () => handleState(goal(5, { justReached: true, nickname: "budi.santoso" })));
+      at(11.5, () => handleState({ type: "wordClue", source: "gift", nickname: "budi.santoso", index: 7, letters: slotsOf(answer, [0, 2, 5, 7]), hiddenLeft: 4 }));
+      at(11.5, () => handleState({ type: "powerUp", kind: "clue", nickname: "budi.santoso", message: "🌹 @budi.santoso mengirim Rose, 1 huruf terbuka!" }));
+      at(25.5, () => handleState({ type: "wordReveal", answer, letters: allOf(answer), winner: { nickname: "rizki.k", pointsAwarded: 20, score: 60, multiplier: 1 } }));
+      at(27, () => handleState({ type: "followAlert", message: "@andi.demo jawabannya benar, tapi belum follow — follow dulu supaya poinmu dihitung!" }));
+      at(29, () => handleState({ type: "powerUp", kind: "steal", nickname: "nadia", victim: "rizki.k", points: 1, message: "🦹 @nadia mencuri 1 poin dari @rizki.k (#1)!" }));
+      at(30, () => enqueueThanks({ kind: "follow", nickname: "sari_22" }));
+      at(34.5, () => enqueueThanks({ kind: "gift", nickname: "budi.santoso", giftName: "Rose", count: 30, image: null }));
       const gifters = [
         { nickname: "budi.santoso", diamonds: 1250, gifts: 64, avatar: null },
         { nickname: "nadia", diamonds: 400, gifts: 12 },
@@ -1930,7 +2134,7 @@
         { nickname: "sari_22", diamonds: 1, gifts: 1 },
         { nickname: "andi.demo", diamonds: 1, gifts: 1 }
       ];
-      at(32, () => handleState({
+      at(40, () => handleState({
         type: "leaderboard", afterQuestion: 1,
         top: [
           { nickname: "rizki.k", score: 59 }, { nickname: "nadia", score: 41 }, { nickname: "fajar", score: 20 },
@@ -1939,10 +2143,10 @@
         ],
         topGifters: gifters
       }));
-      demoPauseScene(at, 40);
-      at(60, () => handleState({ type: "mvp", mvp: gifters[0], runnersUp: gifters.slice(1, 3), durationSec: 20 }));
+      demoPauseScene(at, 48);
+      at(74, () => handleState({ type: "mvp", mvp: gifters[0], runnersUp: gifters.slice(1, 3), durationSec: 20 }));
       // Host closes the live with !end (the card stays up; no time limit).
-      at(82, () => handleState({
+      at(96, () => handleState({
         type: "endCard", host: "flymagical330",
         topPlayer: { nickname: "nadia", score: 81 },
         topGifter: gifters[0]
