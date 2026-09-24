@@ -12,7 +12,7 @@
     "fiftyFifty": { "gift": "Finger Heart" },
     "freezeTimer": { "gift": "Ice Cream Cone", "addSec": 5, "maxPerRound": 3 },
     "stealPoint": { "gift": "Hand Hearts", "points": 1 },
-    "giftGoal": { "gift": "Rose", "target": 50, "multiplier": 3 }
+    "giftGoal": { "gift": "Rose", "target": 5, "multiplier": 2 }
   },
   "mvpCardDurationSec": 30
 }

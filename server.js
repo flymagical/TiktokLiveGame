@@ -53,6 +53,19 @@ async function main() {
     game.showMvp();
     res.type("text/plain").send("Kartu MVP gifter ditampilkan di overlay.");
   });
+  // Pause/resume from a browser or Stream Deck, same as !pause / !lanjut.
+  app.get("/pause", (req, res) => {
+    res.type("text/plain").send(game.pause() ? "Kuis dijeda." : "Tidak ada yang bisa dijeda sekarang.");
+  });
+  app.get("/lanjut", (req, res) => {
+    res.type("text/plain").send(game.resume() ? "Kuis dilanjutkan." : "Kuis tidak sedang dijeda.");
+  });
+
+  app.get("/end", (req, res) => {
+    game.showEndCard();
+    res.type("text/plain").send("Kartu penutup live ditampilkan. Buka /lanjut untuk menutupnya.");
+  });
+
   app.get("/mvp-kuis", (req, res) => {
     game.showMvp("quiz");
     res.type("text/plain").send("Kartu MVP kuis ditampilkan di overlay.");
@@ -72,14 +85,15 @@ async function main() {
 
   tiktok.on("connected", ({ roomId }) => {
     console.log(`Terhubung ke LIVE @${config.tiktokUsername} (room ${roomId}). Memulai kuis...`);
-    game.start().catch((err) => console.error("Gagal memulai game:", err));
+    game.start(roomId).catch((err) => console.error("Gagal memulai game:", err));
   });
 
   tiktok.on("comment", (data) => {
     console.log(`[komentar] ${data.nickname}${data.isFollower ? " (follower)" : ""}: ${data.comment}`);
     // The host can type !mvp (top gifter) or !mvpkuis (top quiz score) in
     // their own chat to show the matching MVP card, or !peringkat for the
-    // leaderboard.
+    // leaderboard, !pause / !lanjut to pause and resume the quiz, or !end for
+    // the closing thank-you card.
     const isHost = data.username && data.username.toLowerCase() === config.tiktokUsername.toLowerCase();
     const command = (data.comment || "").trim().toLowerCase();
     if (isHost && (command === "!mvp" || command === "!mvpkuis")) {
@@ -88,6 +102,18 @@ async function main() {
     }
     if (isHost && command === "!peringkat") {
       game.requestLeaderboard();
+      return;
+    }
+    if (isHost && (command === "!pause" || command === "!jeda")) {
+      game.pause();
+      return;
+    }
+    if (isHost && command === "!end") {
+      game.showEndCard();
+      return;
+    }
+    if (isHost && (command === "!lanjut" || command === "!resume")) {
+      game.resume();
       return;
     }
     game.handleComment(data);

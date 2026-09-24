@@ -270,6 +270,122 @@
   }
 
   /* ---------- Toasts ---------- */
+  /* ---------- Closing thank-you card (!end) ---------- */
+  #endCard {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+    background: radial-gradient(circle at 50% 30%, #4A1537, var(--bg-deep) 72%);
+    z-index: 50; /* above everything: this is the last thing viewers see */
+  }
+  #endCard.show { display: flex; animation: fade-in 0.5s ease-out; }
+  .end-card {
+    width: 100%;
+    max-width: 860px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+    text-align: center;
+    padding: 52px 44px 40px;
+    border-radius: 32px;
+    background: linear-gradient(170deg, #3A1F58, var(--bg-panel) 60%, #1D1240);
+    border: 4px solid var(--pink);
+    box-shadow: 0 0 60px rgba(255,46,118,0.35), 0 24px 60px rgba(0,0,0,0.5);
+  }
+  #endCard.show .end-card { animation: card-in 0.8s cubic-bezier(.2,1.3,.4,1) both; }
+  .end-heart { font-size: 88px; line-height: 1; }
+  #endCard.show .end-heart { animation: title-drop 0.7s cubic-bezier(.2,1.4,.4,1) 0.4s both, hint-bob 2.4s ease-in-out 1.1s infinite; }
+  .end-title {
+    font-family: var(--font-display);
+    font-size: 76px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--yellow);
+  }
+  .end-sub { font-size: 28px; font-weight: 500; color: var(--ink-dim); margin-top: -8px; }
+  .end-thanks {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .end-thanks div {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.07);
+    font-size: 26px;
+    font-weight: 600;
+    text-align: left;
+  }
+  .end-thanks span { font-size: 40px; line-height: 1; }
+  #endCard.show .end-thanks div { animation: row-in 0.5s ease-out both; }
+  #endCard.show .end-thanks div:nth-child(1) { animation-delay: 0.6s; }
+  #endCard.show .end-thanks div:nth-child(2) { animation-delay: 0.75s; }
+  #endCard.show .end-thanks div:nth-child(3) { animation-delay: 0.9s; }
+  #endCard.show .end-thanks div:nth-child(4) { animation-delay: 1.05s; }
+  .end-stars { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+  .end-stars:empty { display: none; }
+  .end-stars .chip {
+    background: rgba(255,255,255,0.08);
+    border-radius: 999px;
+    padding: 8px 20px;
+    font-size: 21px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .end-support {
+    width: 100%;
+    padding: 22px 26px;
+    border-radius: 20px;
+    background: linear-gradient(120deg, rgba(255,46,118,0.22), rgba(155,123,255,0.22));
+    border: 2px solid rgba(255,46,118,0.55);
+    font-size: 27px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .end-support b { color: var(--yellow); }
+  .end-bye { font-family: var(--font-display); font-size: 34px; font-weight: 700; }
+  .end-bye .host { color: var(--cyan); }
+  .end-date { font-size: 18px; color: var(--ink-dim); }
+  .narrow .end-thanks { grid-template-columns: 1fr; }
+  .narrow .end-title { font-size: 60px; }
+
+  /* ---------- Paused by host ---------- */
+  #paused {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(23, 15, 46, 0.72);
+    z-index: 40;
+  }
+  #paused.show { display: flex; animation: fade-in 0.3s ease-out; }
+  .paused-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 36px 56px;
+    background: var(--bg-panel);
+    border: 3px solid var(--yellow);
+    border-radius: var(--radius);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    text-align: center;
+  }
+  #paused.show .paused-card { animation: card-in 0.6s cubic-bezier(.2,1.3,.4,1) both; }
+  .paused-icon { font-size: 72px; line-height: 1; }
+  #paused.show .paused-icon { animation: hint-bob 2.4s ease-in-out infinite; }
+  .paused-title { font-family: var(--font-display); font-size: 56px; font-weight: 700; color: var(--yellow); }
+  .paused-sub { font-size: 26px; font-weight: 500; color: var(--ink-dim); max-width: 640px; }
+
   #toasts {
     position: absolute;
     bottom: 200px;
@@ -822,6 +938,32 @@
     </div>
   </div>
 
+  <div id="endCard">
+    <div class="end-card">
+      <div class="end-heart">💖</div>
+      <div class="end-title">TERIMA KASIH!</div>
+      <div class="end-sub">sudah menemani live kuis hari ini</div>
+      <div class="end-thanks">
+        <div><span>👆</span>Tap-tap layarnya</div>
+        <div><span>🔁</span>Share live-nya</div>
+        <div><span>💬</span>Komentar &amp; jawaban</div>
+        <div><span>🎁</span>Gift &amp; hadiahnya</div>
+      </div>
+      <div class="end-stars" id="endStars"></div>
+      <div class="end-support">🎮 Terus dukung creator ya, supaya bisa mengembangkan <b>game-game baru</b> yang lebih seru lagi!</div>
+      <div class="end-bye">Follow <span class="host" id="endHost"></span> · sampai jumpa di live berikutnya! 👋</div>
+      <div class="end-date" id="endDate"></div>
+    </div>
+  </div>
+
+  <div id="paused">
+    <div class="paused-card">
+      <div class="paused-icon">⏸️</div>
+      <div class="paused-title">KUIS DIJEDA</div>
+      <div class="paused-sub">Sebentar ya, kuis akan segera dilanjutkan! Jawaban belum dihitung selama jeda.</div>
+    </div>
+  </div>
+
   <div id="toasts"></div>
 
   <div id="thanks" aria-live="polite">
@@ -847,6 +989,37 @@
     const winnerBanner = document.getElementById("winnerBanner");
     const leaderboardEl = document.getElementById("leaderboard");
     let leaderboardTimer = null;
+    const pausedEl = document.getElementById("paused");
+    const endEl = document.getElementById("endCard");
+    let endConfetti = null;
+
+    // Closing card for !end. No time limit: it stays until the LIVE ends
+    // (or !lanjut takes it down).
+    function showEndCard({ host, topPlayer, topGifter }) {
+      stopCountdown();
+      pausedEl.classList.remove("show");
+      document.getElementById("endHost").textContent = host ? `@${host}` : "kami";
+      const stars = document.getElementById("endStars");
+      stars.innerHTML = "";
+      if (topPlayer) stars.appendChild(div("chip", `🧠 Juara kuis: @${topPlayer.nickname} · ${topPlayer.score.toLocaleString("id-ID")} poin`));
+      if (topGifter) stars.appendChild(div("chip", `👑 Top gifter: @${topGifter.nickname}`));
+      document.getElementById("endDate").textContent =
+        new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+      replay(endEl, "show");
+      Sfx.mvp();
+      clearInterval(endConfetti);
+      const pop = () => {
+        burst(0, innerHeight, { count: 50, angle: -Math.PI / 3, spread: 0.6, speed: 26 });
+        burst(innerWidth, innerHeight, { count: 50, angle: -Math.PI * 2 / 3, spread: 0.6, speed: 26 });
+      };
+      setTimeout(pop, 900);
+      endConfetti = setInterval(pop, 8000);
+    }
+
+    function hideEndCard() {
+      endEl.classList.remove("show");
+      clearInterval(endConfetti);
+    }
     const lbTitle = document.getElementById("lbTitle");
     const lbList = document.getElementById("lbList");
     const toasts = document.getElementById("toasts");
@@ -1455,6 +1628,7 @@
       switch (payload.type) {
         case "question": {
           leaderboardEl.classList.remove("show");
+          pausedEl.classList.remove("show");
           qNumber.textContent = `Q${payload.questionNumber}`;
           qCategory.textContent = payload.category || "Trivia";
           qText.textContent = payload.question;
@@ -1520,6 +1694,34 @@
           break;
         }
 
+        case "paused": {
+          stopCountdown();
+          // Hold the timer bar where it is instead of letting it run out.
+          timerFill.style.transform = getComputedStyle(timerFill).transform;
+          timerFill.style.transition = "none";
+          clearTimeout(leaderboardTimer);
+          replay(pausedEl, "show");
+          break;
+        }
+
+        case "endCard": {
+          showEndCard(payload);
+          break;
+        }
+
+        case "resumed": {
+          pausedEl.classList.remove("show");
+          hideEndCard();
+          const sec = payload.remainingMs / 1000;
+          if (payload.during === "asking") {
+            runTimer(sec, Math.min(1, sec / currentDurationSec));
+            startCountdown(sec);
+          } else if (payload.during === "leaderboard") {
+            leaderboardTimer = setTimeout(() => leaderboardEl.classList.remove("show"), payload.remainingMs);
+          }
+          break;
+        }
+
         case "answer": {
           addAnswerBubble(payload.nickname, payload.count);
           break;
@@ -1573,7 +1775,9 @@
           // The next question normally hides the board; hide it anyway once its
           // time is up, e.g. when !peringkat is used before the quiz starts.
           clearTimeout(leaderboardTimer);
-          leaderboardTimer = setTimeout(() => leaderboardEl.classList.remove("show"), payload.durationSec * 1000);
+          if (payload.durationSec) {
+            leaderboardTimer = setTimeout(() => leaderboardEl.classList.remove("show"), payload.durationSec * 1000);
+          }
           Sfx.leaderboard();
           setTimeout(() => burst(innerWidth / 2, innerHeight * 0.2, { count: 90, speed: 15 }), 800);
           break;
@@ -1614,7 +1818,37 @@
           showMvp({ kind: "quiz", mvp: mvp || null, runnersUp, totalPlayers, durationSec: 86400 }));
     }
 
-    if (params.has("demo")) {
+    // Question 2 of the demo: the host pauses it (!pause) with 7 seconds
+    // left and resumes it (!lanjut) 6 seconds later. Takes 16 seconds.
+    function demoPauseScene(at, start) {
+      at(start, () => handleState({
+        type: "question", questionNumber: 2, category: "Sains", question: "Planet terbesar di tata surya adalah?",
+        options: [{ letter: "A", text: "Saturnus" }, { letter: "B", text: "Jupiter" }, { letter: "C", text: "Neptunus" }, { letter: "D", text: "Bumi" }],
+        durationSec: 10, multiplier: 2, goal: { gift: "Rose", count: 0, target: 5, multiplier: 2, reached: false }
+      }));
+      ["nadia", "fajar"].forEach((nickname, i) => at(start + 1 + i * 0.8, () => handleState({ type: "answer", nickname, count: i + 1 })));
+      at(start + 3, () => handleState({ type: "paused", during: "asking" }));
+      at(start + 9, () => handleState({ type: "resumed", during: "asking", remainingMs: 7000 }));
+      ["sari_22", "ayu.m"].forEach((nickname, i) => at(start + 10 + i * 0.8, () => handleState({ type: "answer", nickname, count: i + 3 })));
+      at(start + 16, () => handleState({ type: "reveal", correctLetter: "B", correctText: "Jupiter", winner: { nickname: "nadia", pointsAwarded: 40, score: 81, multiplier: 2 } }));
+    }
+
+    // overlay.html?demo=end shows the closing card (!end).
+    if (params.get("demo") === "end") {
+      setTimeout(() => handleState({
+        type: "endCard", host: "flymagical330",
+        topPlayer: { nickname: "rizki.k", score: 240 },
+        topGifter: { nickname: "budi.santoso", diamonds: 1250, gifts: 64 }
+      }), 500);
+    } else if (params.get("demo") === "pause") {
+      const at = (sec, fn) => setTimeout(fn, sec * 1000);
+      renderPowerUps([
+        { gift: "Finger Heart", label: "50/50" },
+        { gift: "Ice Cream Cone", label: "+5 detik" },
+        { gift: "Hand Hearts", label: "curi 1 poin #1" }
+      ]);
+      demoPauseScene(at, 0.5);
+    } else if (params.has("demo")) {
       const at = (sec, fn) => setTimeout(fn, sec * 1000);
       const players = ["rizki.k", "andi.demo", "sari_22", "budi.santoso", "nadia", "ayu.m", "fajar"];
       at(0.5, () => handleState({
@@ -1622,7 +1856,7 @@
         options: [{ letter: "A", text: "Sydney" }, { letter: "B", text: "Melbourne" }, { letter: "C", text: "Canberra" }, { letter: "D", text: "Perth" }],
         durationSec: 12
       }));
-      const goal = (count, extra) => ({ type: "goal", gift: "Rose", count, target: 50, multiplier: 3, reached: count >= 50, ...extra });
+      const goal = (count, extra) => ({ type: "goal", gift: "Rose", count, target: 5, multiplier: 2, reached: count >= 5, ...extra });
       renderPowerUps([
         { gift: "Finger Heart", label: "50/50" },
         { gift: "Ice Cream Cone", label: "+5 detik" },
@@ -1630,10 +1864,10 @@
       ]);
       renderGoal(goal(0));
       players.forEach((nickname, i) => at(2 + i * 0.9, () => handleState({ type: "answer", nickname, count: i + 1 })));
-      at(3, () => handleState(goal(20, { nickname: "nadia" })));
+      at(3, () => handleState(goal(2, { nickname: "nadia" })));
       at(4.5, () => handleState({ type: "powerUp", kind: "fiftyFifty", nickname: "fajar", eliminated: ["A", "D"], message: "✂️ 50/50! @fajar menghapus 2 jawaban salah" }));
       at(6, () => handleState({ type: "powerUp", kind: "freeze", nickname: "ayu.m", addedSec: 5, remainingMs: 11500, usesLeft: 2, message: "⏳ @ayu.m menambah waktu +5 detik! (sisa 2× lagi)" }));
-      at(8, () => handleState(goal(50, { justReached: true, nickname: "budi.santoso" })));
+      at(8, () => handleState(goal(5, { justReached: true, nickname: "budi.santoso" })));
       at(17.5, () => handleState({ type: "reveal", correctLetter: "C", correctText: "Canberra", winner: { nickname: "rizki.k", pointsAwarded: 20, score: 60, multiplier: 1 } }));
       at(19, () => handleState({ type: "followAlert", message: "@andi.demo jawabannya benar, tapi belum follow — follow dulu supaya poinmu dihitung!" }));
       at(21, () => handleState({ type: "powerUp", kind: "steal", nickname: "nadia", victim: "rizki.k", points: 1, message: "🦹 @nadia mencuri 1 poin dari @rizki.k (#1)!" }));
@@ -1657,12 +1891,14 @@
         ],
         topGifters: gifters
       }));
-      at(40, () => handleState({
-        type: "question", questionNumber: 2, category: "Sains", question: "Planet terbesar di tata surya adalah?",
-        options: [{ letter: "A", text: "Saturnus" }, { letter: "B", text: "Jupiter" }, { letter: "C", text: "Neptunus" }, { letter: "D", text: "Bumi" }],
-        durationSec: 10, multiplier: 3, goal: { gift: "Rose", count: 0, target: 50, multiplier: 3, reached: false }
+      demoPauseScene(at, 40);
+      at(60, () => handleState({ type: "mvp", mvp: gifters[0], runnersUp: gifters.slice(1, 3), durationSec: 20 }));
+      // Host closes the live with !end (the card stays up; no time limit).
+      at(82, () => handleState({
+        type: "endCard", host: "flymagical330",
+        topPlayer: { nickname: "nadia", score: 81 },
+        topGifter: gifters[0]
       }));
-      at(47, () => handleState({ type: "mvp", mvp: gifters[0], runnersUp: gifters.slice(1, 3), durationSec: 20 }));
     }
   </script>
 </body>

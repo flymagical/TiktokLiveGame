@@ -73,8 +73,15 @@ Nama gift yang dikirim TikTok bisa kamu lihat di konsol (`[gift] X mengirim
 | `fiftyFifty` | Finger Heart | Menghapus 2 jawaban salah untuk semua penonton. Sekali per soal, hanya saat soal berjalan. |
 | `freezeTimer` | Ice Cream Cone | +`addSec` detik (default 5) ke soal yang sedang berjalan, maksimal `maxPerRound` (default 3) per soal. |
 | `stealPoint` | Hand Hearts | Pengirim mencuri `points` poin (default 1, dikali jumlah combo) dari juara #1 saat itu. Bisa kapan saja. |
-| `giftGoal` | Rose ×50 | Kalau terkumpul `target` gift selama satu soal, soal **berikutnya** bernilai `multiplier`× poin (default 3×). Ada progress bar di overlay. |
+| `giftGoal` | Rose ×5 | Kalau terkumpul `target` gift selama satu soal, soal **berikutnya** bernilai `multiplier`× poin (default 3×). Ada progress bar di overlay. |
 
+- **Soal berbeda setiap live**: bank soal dibagi otomatis menjadi 3 blok.
+  Setiap live memakai satu blok secara bergiliran (1 → 2 → 3 → 1 ...), jadi
+  soal yang sama baru muncul lagi setelah 3 live. Kalau server di-restart di
+  tengah live yang sama, kuis tetap memakai blok itu dan tidak mengulang soal
+  yang sudah keluar. Posisi giliran disimpan di `data/question-rotation.json`
+  (hapus file ini untuk mulai lagi dari blok 1). Soal baru yang ditambahkan ke
+  `lib/questions-id.js` otomatis masuk ke salah satu blok.
 - **Papan peringkat ganda**: setiap `leaderboardEveryNQuestions` soal,
   tampil "Top Skor Kuis" dan "Top Gifter" berdampingan. Top Gifter
   dihitung per stream (diurutkan berdasarkan koin) dan disimpan di
@@ -88,12 +95,26 @@ Nama gift yang dikirim TikTok bisa kamu lihat di konsol (`[gift] X mengirim
 - **Papan peringkat kapan saja**: ketik `!peringkat` di chat live dari akun
   host. Kalau sedang ada soal, papan muncul setelah jawabannya diumumkan
   (soal tidak hilang), lalu kuis berlanjut.
+- **Jeda kuis**: ketik `!pause` (atau `!jeda`) di chat live dari akun host
+  untuk menghentikan kuis sementara, lalu `!lanjut` (atau `!resume`) untuk
+  melanjutkan. Bisa juga lewat `http://localhost:3000/pause` dan
+  `http://localhost:3000/lanjut`. Waktu soal berhenti di tempat dan lanjut
+  dengan sisa waktunya (minimal 5 detik); jawaban selama jeda tidak dihitung.
+- **Kartu penutup live**: ketik `!end` di chat live dari akun host (atau buka
+  `http://localhost:3000/end`) saat akan mengakhiri live. Kartu terima kasih
+  untuk tap-tap, share, komentar, dan gift, plus ajakan mendukung creator
+  untuk game-game baru, tampil **tanpa batas waktu** dan kuis berhenti di
+  belakangnya. Salah kirim? Ketik `!lanjut` untuk menutup kartu dan
+  melanjutkan kuis. Contoh tampilannya: `overlay.html?demo=end`.
 - **Kartu MVP kuis**: ketik `!mvpkuis` di chat live dari akun host, atau buka
   `http://localhost:3000/mvp-kuis`, untuk menampilkan juara skor kuis
   (beserta #2 dan #3) dengan cara yang sama.
   Tampilkan kedua kartu **sebelum** mengakhiri live — setelah live berakhir, penonton
   sudah tidak bisa melihatnya.
-- Buka `overlay.html?demo` untuk melihat semua fitur ini tanpa live.
+- Buka `overlay.html?demo` untuk melihat semua fitur ini tanpa live (diakhiri
+  kartu penutup `!end`).
+  `overlay.html?demo=pause` hanya menampilkan contoh kuis yang dijeda lalu
+  dilanjutkan.
 - **Kartu untuk diposting** (diam, tanpa suara, tidak memengaruhi overlay
   live) — buka selagi server jalan lalu screenshot:
   - `http://localhost:3000/overlay.html?card=mvp` — MVP gifter
@@ -138,6 +159,8 @@ tiktok-live-quiz/
 │  ├─ tiktokClient.js      # menormalkan event TikTok LIVE
 │  ├─ trivia.js             # mengambil/membentuk pertanyaan dari Open Trivia DB
 │  ├─ game.js                # alur pertanyaan, skor, gate follow, !myrank
+│  ├─ questions-id.js        # bank soal Bahasa Indonesia
+│  ├─ questionRotation.js    # membagi bank soal jadi 3 blok, satu blok per live
 │  └─ scores.js              # papan peringkat tersimpan (data/scores.json)
 └─ public/
    └─ overlay.html          # overlay browser source untuk OBS
