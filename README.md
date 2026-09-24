@@ -61,6 +61,40 @@ penonton sudah follow. Pertanyaan diambil dari API gratis
   "follow dulu untuk klaim poinmu!" — kalau dia follow sebelum ronde
   berakhir, dia tetap dapat poin (selama belum ada yang menang duluan).
 
+## Power-up dari gift
+
+Diatur di `config.json` → `powerUps`. Nama gift dicocokkan tanpa peduli
+huruf besar/kecil; kosongkan `"gift": ""` untuk mematikan satu power-up.
+Nama gift yang dikirim TikTok bisa kamu lihat di konsol (`[gift] X mengirim
+<nama gift> xN`) — samakan persis dengan itu.
+
+| Power-up | Default | Efek |
+|---|---|---|
+| `fiftyFifty` | Finger Heart | Menghapus 2 jawaban salah untuk semua penonton. Sekali per soal, hanya saat soal berjalan. |
+| `freezeTimer` | Ice Cream Cone | +`addSec` detik (default 5) ke soal yang sedang berjalan, maksimal `maxPerRound` (default 3) per soal. |
+| `stealPoint` | Hand Hearts | Pengirim mencuri `points` poin (default 1, dikali jumlah combo) dari juara #1 saat itu. Bisa kapan saja. |
+| `giftGoal` | Rose ×50 | Kalau terkumpul `target` gift selama satu soal, soal **berikutnya** bernilai `multiplier`× poin (default 3×). Ada progress bar di overlay. |
+
+- **Papan peringkat ganda**: setiap `leaderboardEveryNQuestions` soal,
+  tampil "Top Skor Kuis" dan "Top Gifter" berdampingan. Top Gifter
+  dihitung per stream (diurutkan berdasarkan koin) dan disimpan di
+  `data/gifters.json`, jadi aman saat server di-restart. Otomatis mulai
+  dari nol setelah 6 jam tanpa gift, atau reset manual lewat
+  `http://localhost:3000/reset-gifters`.
+- **Kartu MVP gifter di akhir stream**: ketik `!mvp` di chat live dari
+  akun host, atau buka `http://localhost:3000/mvp` di browser. Kartu
+  "terima kasih untuk malam ini" untuk top gifter tampil selama
+  `mvpCardDurationSec` detik (kuis dijeda selama itu), siap di-screenshot.
+  Tampilkan **sebelum** mengakhiri live — setelah live berakhir, penonton
+  sudah tidak bisa melihatnya.
+- Buka `overlay.html?demo` untuk melihat semua fitur ini tanpa live.
+- **Kartu untuk diposting** (diam, tanpa suara, tidak memengaruhi overlay
+  live) — buka selagi server jalan lalu screenshot:
+  - `http://localhost:3000/overlay.html?card=mvp` — MVP gifter
+  - `http://localhost:3000/overlay.html?card=mvp-kuis` — MVP skor kuis
+  - `http://localhost:3000/overlay.html?card=peringkat` — Top Skor Kuis &
+    Top Gifter atas-bawah (bingkai 9:16)
+
 ## Batasan penting, baca sebelum mengandalkan ini
 
 - **Deteksi follow berbasis sesi, bukan riwayat.** Feed live TikTok cuma

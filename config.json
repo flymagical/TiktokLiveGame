@@ -7,5 +7,12 @@
   "leaderboardEveryNQuestions": 3,
   "pointsForFirstCorrect": 20,
   "requireFollowToScore": true,
-  "trivia": ""
+  "trivia": "",
+  "powerUps": {
+    "fiftyFifty": { "gift": "Finger Heart" },
+    "freezeTimer": { "gift": "Ice Cream Cone", "addSec": 5, "maxPerRound": 3 },
+    "stealPoint": { "gift": "Hand Hearts", "points": 1 },
+    "giftGoal": { "gift": "Rose", "target": 50, "multiplier": 3 }
+  },
+  "mvpCardDurationSec": 30
 }

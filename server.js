@@ -33,7 +33,9 @@ async function main() {
         ? `jawaban: ${payload.correctLetter} (${payload.correctText}) — ` +
           (payload.winner ? `pemenang: ${payload.winner.nickname} +${payload.winner.pointsAwarded}` : "tidak ada pemenang")
         :
-      payload.type === "followAlert" ? payload.message : "";
+      payload.type === "followAlert" || payload.type === "powerUp" ? payload.message :
+      payload.type === "goal" ? `${payload.count}/${payload.target}${payload.justReached ? " TERCAPAI!" : ""}` :
+      payload.type === "mvp" ? (payload.mvp ? payload.mvp.nickname : "belum ada gifter") : "";
     console.log(`[kuis] ${payload.type}`, detail);
   });
 
@@ -41,6 +43,26 @@ async function main() {
   // overlay isn't blank until the next event.
   io.on("connection", (socket) => {
     socket.emit("game:leaderboard", scoreboard.getLeaderboard(10));
+    socket.emit("game:config", { powerUps: game.getPowerUpLegend(), goal: game.getGoal() });
+  });
+
+  // Open http://localhost:PORT/mvp (e.g. from a browser or a Stream Deck
+  // button) to show the end-of-stream MVP gifter card.
+  app.get("/mvp", (req, res) => {
+    game.showMvp();
+    res.type("text/plain").send("Kartu MVP gifter ditampilkan di overlay.");
+  });
+
+  // Data for the shareable cards (overlay.html?card=...). ?limit=1..10, default 3.
+  const limitOf = (req) => Math.min(10, Math.max(1, Number(req.query.limit) || 3));
+  app.get("/api/top-gifters", (req, res) => res.json(scoreboard.getTopGifters(limitOf(req))));
+  app.get("/api/top-players", (req, res) =>
+    res.json({ top: scoreboard.getLeaderboard(limitOf(req)), totalPlayers: scoreboard.getLeaderboard(Infinity).length }));
+
+  // Start the Top Gifter board from zero (e.g. at the start of a new stream).
+  app.get("/reset-gifters", (req, res) => {
+    scoreboard.resetGifters();
+    res.type("text/plain").send("Daftar Top Gifter sudah di-reset.");
   });
 
   tiktok.on("connected", ({ roomId }) => {
@@ -50,6 +72,12 @@ async function main() {
 
   tiktok.on("comment", (data) => {
     console.log(`[komentar] ${data.nickname}${data.isFollower ? " (follower)" : ""}: ${data.comment}`);
+    // The host can type !mvp in their own chat to show the MVP gifter card.
+    const isHost = data.username && data.username.toLowerCase() === config.tiktokUsername.toLowerCase();
+    if (isHost && /^!mvp$/i.test((data.comment || "").trim())) {
+      game.showMvp();
+      return;
+    }
     game.handleComment(data);
   });
 
@@ -60,8 +88,9 @@ async function main() {
   });
 
   tiktok.on("gift", (data) => {
-    console.log(`[gift] ${data.nickname} mengirim ${data.giftName} x${data.count}`);
+    console.log(`[gift] ${data.nickname} mengirim ${data.giftName} x${data.count} (${data.diamonds} koin)`);
     io.emit("thanks", { kind: "gift", nickname: data.nickname, giftName: data.giftName, count: data.count, image: data.image });
+    game.handleGift(data);
   });
 
   tiktok.on("disconnected", (info) => {
