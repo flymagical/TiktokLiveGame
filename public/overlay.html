@@ -846,6 +846,7 @@
     const timerFill = document.getElementById("timerFill");
     const winnerBanner = document.getElementById("winnerBanner");
     const leaderboardEl = document.getElementById("leaderboard");
+    let leaderboardTimer = null;
     const lbTitle = document.getElementById("lbTitle");
     const lbList = document.getElementById("lbList");
     const toasts = document.getElementById("toasts");
@@ -1566,8 +1567,13 @@
 
         case "leaderboard": {
           stopCountdown();
-          renderLeaderboard(payload.top, payload.topGifters, `Papan peringkat setelah Q${payload.afterQuestion}`);
+          renderLeaderboard(payload.top, payload.topGifters,
+            payload.afterQuestion ? `Papan peringkat setelah Q${payload.afterQuestion}` : "Papan peringkat");
           replay(leaderboardEl, "show");
+          // The next question normally hides the board; hide it anyway once its
+          // time is up, e.g. when !peringkat is used before the quiz starts.
+          clearTimeout(leaderboardTimer);
+          leaderboardTimer = setTimeout(() => leaderboardEl.classList.remove("show"), payload.durationSec * 1000);
           Sfx.leaderboard();
           setTimeout(() => burst(innerWidth / 2, innerHeight * 0.2, { count: 90, speed: 15 }), 800);
           break;

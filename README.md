@@ -85,7 +85,13 @@ Nama gift yang dikirim TikTok bisa kamu lihat di konsol (`[gift] X mengirim
   akun host, atau buka `http://localhost:3000/mvp` di browser. Kartu
   "terima kasih untuk malam ini" untuk top gifter tampil selama
   `mvpCardDurationSec` detik (kuis dijeda selama itu), siap di-screenshot.
-  Tampilkan **sebelum** mengakhiri live — setelah live berakhir, penonton
+- **Papan peringkat kapan saja**: ketik `!peringkat` di chat live dari akun
+  host. Kalau sedang ada soal, papan muncul setelah jawabannya diumumkan
+  (soal tidak hilang), lalu kuis berlanjut.
+- **Kartu MVP kuis**: ketik `!mvpkuis` di chat live dari akun host, atau buka
+  `http://localhost:3000/mvp-kuis`, untuk menampilkan juara skor kuis
+  (beserta #2 dan #3) dengan cara yang sama.
+  Tampilkan kedua kartu **sebelum** mengakhiri live — setelah live berakhir, penonton
   sudah tidak bisa melihatnya.
 - Buka `overlay.html?demo` untuk melihat semua fitur ini tanpa live.
 - **Kartu untuk diposting** (diam, tanpa suara, tidak memengaruhi overlay

@@ -35,7 +35,8 @@ async function main() {
         :
       payload.type === "followAlert" || payload.type === "powerUp" ? payload.message :
       payload.type === "goal" ? `${payload.count}/${payload.target}${payload.justReached ? " TERCAPAI!" : ""}` :
-      payload.type === "mvp" ? (payload.mvp ? payload.mvp.nickname : "belum ada gifter") : "";
+      payload.type === "mvp"
+        ? `${payload.kind}: ${payload.mvp ? payload.mvp.nickname : payload.kind === "quiz" ? "belum ada pemain" : "belum ada gifter"}` : "";
     console.log(`[kuis] ${payload.type}`, detail);
   });
 
@@ -51,6 +52,10 @@ async function main() {
   app.get("/mvp", (req, res) => {
     game.showMvp();
     res.type("text/plain").send("Kartu MVP gifter ditampilkan di overlay.");
+  });
+  app.get("/mvp-kuis", (req, res) => {
+    game.showMvp("quiz");
+    res.type("text/plain").send("Kartu MVP kuis ditampilkan di overlay.");
   });
 
   // Data for the shareable cards (overlay.html?card=...). ?limit=1..10, default 3.
@@ -72,10 +77,17 @@ async function main() {
 
   tiktok.on("comment", (data) => {
     console.log(`[komentar] ${data.nickname}${data.isFollower ? " (follower)" : ""}: ${data.comment}`);
-    // The host can type !mvp in their own chat to show the MVP gifter card.
+    // The host can type !mvp (top gifter) or !mvpkuis (top quiz score) in
+    // their own chat to show the matching MVP card, or !peringkat for the
+    // leaderboard.
     const isHost = data.username && data.username.toLowerCase() === config.tiktokUsername.toLowerCase();
-    if (isHost && /^!mvp$/i.test((data.comment || "").trim())) {
-      game.showMvp();
+    const command = (data.comment || "").trim().toLowerCase();
+    if (isHost && (command === "!mvp" || command === "!mvpkuis")) {
+      game.showMvp(command === "!mvpkuis" ? "quiz" : "gifter");
+      return;
+    }
+    if (isHost && command === "!peringkat") {
+      game.requestLeaderboard();
       return;
     }
     game.handleComment(data);
