@@ -40,11 +40,21 @@ async function main() {
     console.log(`[kuis] ${payload.type}`, detail);
   });
 
+  // "Live bentar aja, testing" mark on the overlay, toggled by the host with
+  // !testing. Off again after a server restart.
+  let testingMark = false;
+  const setTestingMark = (on) => {
+    testingMark = on;
+    io.emit("game:testing", testingMark);
+    console.log(`[kuis] tanda testing ${testingMark ? "ditampilkan" : "disembunyikan"}`);
+  };
+
   // Send a fresh client the current leaderboard so a late-connecting
   // overlay isn't blank until the next event.
   io.on("connection", (socket) => {
     socket.emit("game:leaderboard", scoreboard.getLeaderboard(10));
     socket.emit("game:config", { powerUps: game.getPowerUpLegend(), goal: game.getGoal() });
+    socket.emit("game:testing", testingMark);
   });
 
   // Open http://localhost:PORT/mvp (e.g. from a browser or a Stream Deck
@@ -59,6 +69,11 @@ async function main() {
   });
   app.get("/lanjut", (req, res) => {
     res.type("text/plain").send(game.resume() ? "Kuis dilanjutkan." : "Kuis tidak sedang dijeda.");
+  });
+
+  app.get("/testing", (req, res) => {
+    setTestingMark(!testingMark);
+    res.type("text/plain").send(testingMark ? "Tanda testing ditampilkan." : "Tanda testing disembunyikan.");
   });
 
   app.get("/end", (req, res) => {
@@ -92,8 +107,8 @@ async function main() {
     console.log(`[komentar] ${data.nickname}${data.isFollower ? " (follower)" : ""}: ${data.comment}`);
     // The host can type !mvp (top gifter) or !mvpkuis (top quiz score) in
     // their own chat to show the matching MVP card, or !peringkat for the
-    // leaderboard, !pause / !lanjut to pause and resume the quiz, or !end for
-    // the closing thank-you card.
+    // leaderboard, !pause / !lanjut to pause and resume the quiz, !testing to
+    // toggle the "just testing" mark, or !end for the closing thank-you card.
     const isHost = data.username && data.username.toLowerCase() === config.tiktokUsername.toLowerCase();
     const command = (data.comment || "").trim().toLowerCase();
     if (isHost && (command === "!mvp" || command === "!mvpkuis")) {
@@ -106,6 +121,10 @@ async function main() {
     }
     if (isHost && (command === "!pause" || command === "!jeda")) {
       game.pause();
+      return;
+    }
+    if (isHost && (command === "!testing" || command === "!testing off")) {
+      setTestingMark(command === "!testing" ? !testingMark : false);
       return;
     }
     if (isHost && command === "!end") {

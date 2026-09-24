@@ -46,6 +46,41 @@
     gap: 28px;
   }
 
+  /* ---------- "Just testing" mark (!testing) ---------- */
+  .testing-mark {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 100%;
+    margin-bottom: -8px;
+    padding: 10px 22px;
+    border-radius: 999px;
+    background: rgba(36, 23, 72, 0.92);
+    border: 2px dashed var(--yellow);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--ink);
+    animation: fade-in 0.4s ease-out;
+  }
+  .testing-mark[hidden] { display: none; }
+  .testing-mark .dot {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--pink);
+    box-shadow: 0 0 10px var(--pink);
+    animation: testing-blink 1.4s ease-in-out infinite;
+  }
+  .testing-mark .tag {
+    flex: none;
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--yellow);
+  }
+  @keyframes testing-blink { 50% { opacity: 0.25; } }
+
   /* ---------- Question header ---------- */
   .q-meta {
     display: flex;
@@ -877,6 +912,12 @@
 </head>
 <body>
   <div id="stage">
+    <div class="testing-mark" id="testingMark" hidden>
+      <span class="dot"></span>
+      <span class="tag">TESTING</span>
+      <span>*Live bentar aja.. testing perubahan server. Tapi boleh banget join 🙌</span>
+    </div>
+
     <div class="q-meta">
       <div class="chip" id="qNumber">Q1</div>
       <div class="chip category" id="qCategory">—</div>
@@ -1621,6 +1662,9 @@
     });
 
     socket.on("game:state", handleState);
+    socket.on("game:testing", (on) => {
+      document.getElementById("testingMark").hidden = !on || cardOnly;
+    });
 
     let currentDurationSec = 0;
 
@@ -1832,6 +1876,9 @@
       ["sari_22", "ayu.m"].forEach((nickname, i) => at(start + 10 + i * 0.8, () => handleState({ type: "answer", nickname, count: i + 3 })));
       at(start + 16, () => handleState({ type: "reveal", correctLetter: "B", correctText: "Jupiter", winner: { nickname: "nadia", pointsAwarded: 40, score: 81, multiplier: 2 } }));
     }
+
+    // Every demo shows the "just testing" mark (!testing).
+    if (params.has("demo")) document.getElementById("testingMark").hidden = false;
 
     // overlay.html?demo=end shows the closing card (!end).
     if (params.get("demo") === "end") {

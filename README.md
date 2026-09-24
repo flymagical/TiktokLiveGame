@@ -100,6 +100,11 @@ Nama gift yang dikirim TikTok bisa kamu lihat di konsol (`[gift] X mengirim
   melanjutkan. Bisa juga lewat `http://localhost:3000/pause` dan
   `http://localhost:3000/lanjut`. Waktu soal berhenti di tempat dan lanjut
   dengan sisa waktunya (minimal 5 detik); jawaban selama jeda tidak dihitung.
+- **Tanda live testing**: ketik `!testing` di chat live dari akun host (atau
+  buka `http://localhost:3000/testing`) untuk menampilkan tanda
+  "*Live bentar aja.. testing perubahan server. Tapi boleh banget join" di
+  atas overlay selama live. Ketik `!testing` lagi (atau `!testing off`) untuk
+  menyembunyikannya. Tanda ini hilang sendiri kalau server di-restart.
 - **Kartu penutup live**: ketik `!end` di chat live dari akun host (atau buka
   `http://localhost:3000/end`) saat akan mengakhiri live. Kartu terima kasih
   untuk tap-tap, share, komentar, dan gift, plus ajakan mendukung creator
