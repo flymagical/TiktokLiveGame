@@ -23,9 +23,18 @@ async function main() {
   const game = new GameEngine(config, scoreboard);
   const tiktok = new TikTokClient(config.tiktokUsername);
 
+  // The question on screen right now, so a page that (re)connects mid-round
+  // (e.g. after switching between overlay.html and tebak.html) can show it.
+  let activeQuestion = null;
+
   // Push every game state change straight to the overlay.
   game.on("state", (payload) => {
     io.emit("game:state", payload);
+    if (payload.type === "question" || payload.type === "wordQuestion") {
+      activeQuestion = { payload, askedAt: Date.now() };
+    } else if (["reveal", "wordReveal", "leaderboard", "endCard", "welcome"].includes(payload.type)) {
+      activeQuestion = null;
+    }
     if (payload.type === "answer" || payload.type === "taps") return; // too chatty to log
     const detail =
       payload.type === "question" ? payload.question :
@@ -43,6 +52,7 @@ async function main() {
         ? `jawaban: ${payload.answer} — ` +
           (payload.winner ? `pemenang: ${payload.winner.nickname} +${payload.winner.pointsAwarded}` : "tidak ada pemenang")
         :
+      payload.type === "welcome" ? "kartu selamat datang tampil — ketik !start untuk mulai" :
       payload.type === "mode" ? `${payload.mode}${payload.pending ? " (mulai soal berikutnya)" : ""}` : "";
     console.log(`[kuis] ${payload.type}`, detail);
   });
@@ -62,6 +72,13 @@ async function main() {
     socket.emit("game:leaderboard", scoreboard.getLeaderboard(10));
     socket.emit("game:config", { powerUps: game.getPowerUpLegend(), goal: game.getGoal(), mode: game.mode });
     socket.emit("game:testing", testingMark);
+    socket.emit("game:previousMvp", scoreboard.getPreviousMvp());
+    if (game.state === "waiting") socket.emit("game:state", game.getWelcome());
+    if (activeQuestion && game.state === "asking") {
+      const { payload, askedAt } = activeQuestion;
+      const leftSec = Math.round(payload.durationSec - (Date.now() - askedAt) / 1000);
+      if (leftSec > 2) socket.emit("game:state", { ...payload, durationSec: leftSec });
+    }
   });
 
   // Open http://localhost:PORT/mvp (e.g. from a browser or a Stream Deck
@@ -96,6 +113,20 @@ async function main() {
     res.type("text/plain").send("Kartu penutup live ditampilkan. Buka /lanjut untuk menutupnya.");
   });
 
+  // Same as the host typing !welcome: stop the quiz, show the welcome card.
+  app.get("/welcome", (req, res) => {
+    res.type("text/plain").send(game.showWelcome()
+      ? "Kartu selamat datang ditampilkan. Ketik !start (atau buka /start) untuk mulai lagi."
+      : "Belum terhubung ke LIVE.");
+  });
+
+  // Same as the host typing !start: end the welcome card, begin the quiz.
+  app.get("/start", (req, res) => {
+    res.type("text/plain").send(game.begin()
+      ? "Kuis dimulai!"
+      : "Kuis tidak dalam posisi menunggu (sudah berjalan, atau belum terhubung ke LIVE).");
+  });
+
   app.get("/mvp-kuis", (req, res) => {
     game.showMvp("quiz");
     res.type("text/plain").send("Kartu MVP kuis ditampilkan di overlay.");
@@ -115,12 +146,19 @@ async function main() {
 
   tiktok.on("connected", ({ roomId }) => {
     console.log(`Terhubung ke LIVE @${config.tiktokUsername} (room ${roomId}). Memulai kuis...`);
+    if (scoreboard.startSession(roomId)) {
+      const { quiz, gift } = scoreboard.getPreviousMvp();
+      console.log(`MVP live sebelumnya — kuis: ${quiz ? `${quiz.nickname} (${quiz.points} poin)` : "-"}, ` +
+        `gift: ${gift ? `${gift.nickname} (${gift.diamonds} koin)` : "-"}`);
+      io.emit("game:previousMvp", scoreboard.getPreviousMvp());
+    }
     game.start(roomId).catch((err) => console.error("Gagal memulai game:", err));
   });
 
   tiktok.on("comment", (data) => {
     console.log(`[komentar] ${data.nickname}${data.isFollower ? " (follower)" : ""}: ${data.comment}`);
-    // The host can type !mvp (top gifter) or !mvpkuis (top quiz score) in
+    // The host types !start to begin the quiz (a welcome card shows until
+    // then; !welcome brings it back if the quiz started by accident). The host can also type !mvp (top gifter) or !mvpkuis (top quiz score) in
     // their own chat to show the matching MVP card, or !peringkat for the
     // leaderboard, !pause / !lanjut to pause and resume the quiz, !testing to
     // toggle the "just testing" mark, !mode tebak / !mode pilihan to switch the
@@ -137,6 +175,14 @@ async function main() {
     }
     if (isHost && (command === "!pause" || command === "!jeda")) {
       game.pause();
+      return;
+    }
+    if (isHost && command === "!welcome") {
+      if (!game.showWelcome()) console.log("[kuis] !welcome diabaikan: belum terhubung ke LIVE");
+      return;
+    }
+    if (isHost && command === "!start") {
+      if (!game.begin()) console.log("[kuis] !start diabaikan: kuis sudah berjalan atau belum terhubung ke LIVE");
       return;
     }
     const modeCommand = command.match(/^!mode (tebak|pilihan)$/);

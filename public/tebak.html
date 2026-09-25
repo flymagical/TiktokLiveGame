@@ -46,6 +46,27 @@
     gap: 28px;
   }
 
+  /* ---------- Last live's MVPs, small, for viewers to beat ---------- */
+  .prev-mvp {
+    flex: none; /* the stage is a fixed-height column; don't squash this line */
+    max-width: 100%;
+    margin-bottom: -6px;
+    padding: 12px 28px;
+    border-radius: 999px;
+    background: rgba(23, 15, 46, 0.72);
+    font-size: 21px;
+    line-height: 1.3;
+    font-weight: 500;
+    color: var(--ink-dim);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .prev-mvp[hidden] { display: none; }
+  .prev-mvp b { color: var(--yellow); font-weight: 700; }
+  .prev-mvp .sep { opacity: 0.5; margin: 0 6px; }
+
   /* ---------- "Just testing" mark (!testing) ---------- */
   .testing-mark {
     display: flex;
@@ -423,6 +444,43 @@
   #endCard.show .end-thanks div:nth-child(2) { animation-delay: 0.75s; }
   #endCard.show .end-thanks div:nth-child(3) { animation-delay: 0.9s; }
   #endCard.show .end-thanks div:nth-child(4) { animation-delay: 1.05s; }
+
+  /* ---------- Welcome card, until the host types !start ---------- */
+  #welcomeCard {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+    background: radial-gradient(circle at 50% 30%, #123D45, var(--bg-deep) 72%);
+    z-index: 45; /* under the !end card, over the quiz */
+  }
+  #welcomeCard.show { display: flex; animation: fade-in 0.5s ease-out; }
+  #welcomeCard .end-card {
+    border-color: var(--cyan);
+    box-shadow: 0 0 60px rgba(63,227,208,0.3), 0 24px 60px rgba(0,0,0,0.5);
+  }
+  #welcomeCard .end-title { color: var(--cyan); }
+  #welcomeCard .end-host { color: var(--yellow); }
+  #welcomeCard .end-support { border-color: rgba(63,227,208,0.55); background: linear-gradient(120deg, rgba(63,227,208,0.18), rgba(155,123,255,0.22)); }
+  #welcomeCard .welcome-wait {
+    padding: 10px 26px;
+    border-radius: 999px;
+    background: rgba(255,203,60,0.14);
+    border: 2px solid rgba(255,203,60,0.5);
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--yellow);
+  }
+  #welcomeCard .welcome-wait .dots span { animation: testing-blink 1.4s ease-in-out infinite; }
+  #welcomeCard .welcome-wait .dots span:nth-child(2) { animation-delay: 0.2s; }
+  #welcomeCard .welcome-wait .dots span:nth-child(3) { animation-delay: 0.4s; }
+  #welcomeCard.show .end-card { animation: card-in 0.8s cubic-bezier(.2,1.3,.4,1) both; }
+  #welcomeCard.show .end-heart { animation: title-drop 0.7s cubic-bezier(.2,1.4,.4,1) 0.4s both, hint-bob 2.4s ease-in-out 1.1s infinite; }
+  #welcomeCard.show .end-thanks div { animation: row-in 0.5s ease-out both; }
+  #welcomeCard.show .end-thanks div:nth-child(1) { animation-delay: 0.6s; }
+  #welcomeCard.show .end-thanks div:nth-child(2) { animation-delay: 0.75s; }
   .end-stars { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
   .end-stars:empty { display: none; }
   .end-stars .chip {
@@ -724,23 +782,30 @@
   .goal.bump { animation: bump 0.35s ease-out; }
 
   .powerups {
+    flex: none;
     width: 100%;
     max-width: 880px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)); /* 2 x 2 */
     gap: 10px;
   }
   .powerups .pu {
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
     background: rgba(36,23,72,0.92);
     border: 2px solid rgba(63,227,208,0.45);
-    border-radius: 999px;
-    padding: 6px 16px 6px 8px;
+    border-radius: 16px;
+    padding: 8px 14px 8px 8px;
     font-size: 18px;
     font-weight: 600;
+    line-height: 1.25;
+  }
+  /* An odd last item (e.g. 3 power-ups) sits centred under the others. */
+  .powerups .pu:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    justify-self: center;
   }
   .powerups .pu b { color: var(--cyan); }
 
@@ -965,6 +1030,7 @@
 </head>
 <body>
   <div id="stage">
+    <div class="prev-mvp" id="prevMvp" hidden></div>
     <div class="testing-mark" id="testingMark" hidden>
       <span class="dot"></span>
       <span class="tag">TESTING</span>
@@ -1039,6 +1105,20 @@
       <div class="mvp-msg" id="mvpMsg"></div>
       <div class="mvp-runners" id="mvpRunners"></div>
       <div class="mvp-date" id="mvpDate"></div>
+    </div>
+  </div>
+
+  <div id="welcomeCard">
+    <div class="end-card">
+      <div class="end-heart">👋</div>
+      <div class="end-title">SELAMAT DATANG!</div>
+      <div class="end-sub">di live kuis <span class="end-host" id="welcomeHost"></span></div>
+      <div class="welcome-wait">⏳ Tunggu sebentar ya, kuis segera dimulai<span class="dots"><span>.</span><span>.</span><span>.</span></span></div>
+      <div class="end-thanks">
+        <div><span>➕</span>Follow dulu biar poinmu dihitung</div>
+        <div><span>📺</span>Mampir ke konten lainnya di profil</div>
+      </div>
+      <div class="end-support">🎮 Yuk, <b>seru-seruan main game bareng</b> sampai akhir live!</div>
     </div>
   </div>
 
@@ -1123,6 +1203,22 @@
       };
       setTimeout(pop, 900);
       endConfetti = setInterval(pop, 8000);
+    }
+
+    // Welcome card while the quiz waits for the host's !start.
+    const welcomeEl = document.getElementById("welcomeCard");
+    // Also sent by !welcome mid-quiz, so clear whatever the quiz had up.
+    function showWelcome({ host }) {
+      document.getElementById("welcomeHost").textContent = host ? `@${host}` : "";
+      stopCountdown();
+      pausedEl.classList.remove("show");
+      clearTimeout(leaderboardTimer);
+      leaderboardEl.classList.remove("show");
+      hideEndCard();
+      if (!welcomeEl.classList.contains("show")) replay(welcomeEl, "show");
+    }
+    function hideWelcome() {
+      welcomeEl.classList.remove("show");
     }
 
     function hideEndCard() {
@@ -1518,7 +1614,7 @@
       });
     }
 
-    let tapsPerClue = 50;
+    let tapsPerClue = 10;
 
     function renderTaps({ progress, perClue, maxed }) {
       tapsPerClue = perClue || tapsPerClue;
@@ -1815,14 +1911,32 @@
     // overwrite its legend, goal and testing mark.
     const isDemo = params.has("demo");
 
+    // Multiple choice is drawn by overlay.html, so the OBS source follows the
+    // host's !mode pilihan there by itself (cards and demos stay put).
+    function goToPilihan() {
+      if (cardOnly || isDemo) return showModeNote();
+      location.replace("overlay.html" + location.search);
+    }
+
     socket.on("game:config", ({ powerUps, goal, mode }) => {
       if (isDemo) return;
+      if (mode && mode !== "tebak" && !cardOnly) return goToPilihan();
       renderPowerUps(powerUps);
       renderGoal(goal);
-      if (mode && mode !== "tebak" && !cardOnly) showModeNote();
     });
 
     socket.on("game:state", handleState);
+    // Last live's quiz MVP and gift MVP, e.g. "MVP kuis live lalu: X · 300 poin".
+    socket.on("game:previousMvp", ({ quiz, gift } = {}) => {
+      const el = document.getElementById("prevMvp");
+      const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+      const parts = [];
+      if (quiz) parts.push(`🏆 mvp kuis live lalu: <b>${esc(quiz.nickname)}</b> · ${quiz.points.toLocaleString("id-ID")} poin`);
+      if (gift) parts.push(`🎁 mvp gift: <b>${esc(gift.nickname)}</b> · ${gift.diamonds.toLocaleString("id-ID")} koin`);
+      el.innerHTML = parts.join('<span class="sep">|</span>') + (parts.length ? '<span class="sep">—</span>bisa kalahkan?' : "");
+      el.hidden = !parts.length || cardOnly;
+    });
+
     socket.on("game:testing", (on) => {
       if (isDemo) return;
       document.getElementById("testingMark").hidden = !on || cardOnly;
@@ -1831,6 +1945,7 @@
     let currentDurationSec = 0;
 
     function handleState(payload) {
+      if (payload.type === "question" || payload.type === "wordQuestion") hideWelcome();
       switch (payload.type) {
         case "wordQuestion": {
           leaderboardEl.classList.remove("show");
@@ -1883,15 +1998,15 @@
             showToast(payload.pending ? "🔤 Tebak kata dimulai soal berikutnya!" : "🔤 Mode tebak kata aktif!", false, "power");
             if (!payload.pending) showWaiting();
           } else {
-            showToast("Mode pilihan ganda dipilih — buka overlay.html untuk memainkannya.", false);
-            if (!payload.pending) showModeNote();
+            showToast(payload.pending ? "🔠 Pilihan ganda dimulai soal berikutnya!" : "🔠 Mode pilihan ganda aktif!", false);
+            if (!payload.pending) goToPilihan();
           }
           Sfx.toast();
           break;
         }
 
         case "question": {
-          showModeNote();
+          goToPilihan();
           break;
         }
 
@@ -1938,6 +2053,11 @@
           timerFill.style.transition = "none";
           clearTimeout(leaderboardTimer);
           replay(pausedEl, "show");
+          break;
+        }
+
+        case "welcome": {
+          if (!cardOnly) showWelcome(payload);
           break;
         }
 
@@ -2048,7 +2168,7 @@
           showMvp({ kind: "quiz", mvp: mvp || null, runnersUp, totalPlayers, durationSec: 86400 }));
     }
 
-    // --- Demo: tebak.html?demo (full), ?demo=pause, ?demo=end --------------
+    // --- Demo: tebak.html?demo (full), ?demo=welcome, ?demo=pause, ?demo=end --------------
     const slotsOf = (text, shown = []) => [...text].map((ch, i) =>
       ch === " " ? { kind: "space", ch: " " } :
       /[\p{L}\p{N}]/u.test(ch) ? { kind: "letter", ch: shown.includes(i) ? ch.toUpperCase() : null } :
@@ -2084,7 +2204,10 @@
     // Every demo shows the "just testing" mark (!testing).
     if (params.has("demo")) document.getElementById("testingMark").hidden = false;
 
-    if (params.get("demo") === "end") {
+    // ?demo=welcome shows only the welcome card, as before the host's !start.
+    if (params.get("demo") === "welcome") {
+      setTimeout(() => handleState({ type: "welcome", host: "flymagical330" }), 500);
+    } else if (params.get("demo") === "end") {
       setTimeout(() => handleState({
         type: "endCard", host: "flymagical330",
         topPlayer: { nickname: "rizki.k", score: 240 },
@@ -2095,7 +2218,11 @@
       renderPowerUps(demoLegend);
       demoPauseScene(at, 0.5);
     } else if (params.has("demo")) {
-      const at = (sec, fn) => setTimeout(fn, sec * 1000);
+      // The full demo opens on the welcome card; the first question comes
+      // WELCOME_SEC later, as if the host typed !start.
+      const WELCOME_SEC = 6;
+      setTimeout(() => handleState({ type: "welcome", host: "flymagical330" }), 300);
+      const at = (sec, fn) => setTimeout(fn, (sec + WELCOME_SEC) * 1000);
       const players = ["rizki.k", "andi.demo", "sari_22", "budi.santoso", "nadia", "ayu.m", "fajar"];
       const answer = "Canberra";
       at(0.5, () => handleState({
