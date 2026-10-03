@@ -2,10 +2,10 @@
 
 Game trivia real-time untuk TikTok LIVE kamu. Aplikasi ini membaca komentar
 penonton, menjalankan satu pertanyaan setiap beberapa detik, memberikan poin
-ke penonton yang **pertama** menjawab benar, menampilkan papan peringkat
-setiap 10 pertanyaan, dan merespons `!myrank`. Poin hanya bisa didapat kalau
-penonton sudah follow. Pertanyaan diambil dari API gratis
-[Open Trivia DB](https://opentdb.com).
+dasar ke **semua** penonton yang menjawab benar plus poin bonus untuk yang
+**tercepat**, menampilkan papan peringkat setiap 10 pertanyaan, dan merespons
+`!myrank`. Poin hanya bisa didapat kalau penonton sudah follow. Pertanyaan
+diambil dari API gratis [Open Trivia DB](https://opentdb.com).
 
 > **Catatan bahasa:** pertanyaan kuis dari Open Trivia DB hanya tersedia
 > dalam Bahasa Inggris — API publiknya tidak mendukung bahasa lain. UI
@@ -21,6 +21,16 @@ penonton sudah follow. Pertanyaan diambil dari API gratis
 - **`public/overlay.html`** adalah yang kamu tambahkan ke OBS sebagai
   Browser Source — menampilkan pertanyaan, timer, jawaban, papan
   peringkat, dan notifikasi.
+- Ada 4 format kuis (lihat bagian masing-masing di bawah): **pilihan ganda**
+  (`overlay.html`, default), **tebak kata** (`tebak.html`), **asosiasi kata**
+  (`asosiasi.html`), dan **klu** (`klu.html`). Ganti kapan saja dengan
+  `!mode pilihan` / `!mode tebak` / `!mode asosiasi` / `!mode klu` di chat
+  host, atau lewat `http://localhost:3000/mode/<nama>`. **Satu Browser
+  Source saja sudah cukup**: keempat halaman saling berpindah otomatis saat
+  mode berganti, jadi kamu tidak perlu menambahkan 4 Browser Source di OBS.
+- Saat LIVE baru terhubung, overlay menampilkan **kartu selamat datang** dan
+  kuis belum berjalan sampai host mengetik `!start`. Lihat bagian "Mulai
+  kuis" di bawah.
 - Tidak ada yang resmi dari TikTok: aplikasi ini memakai
   `tiktok-live-connector`, library yang dikelola komunitas dan mengakses
   feed live internal TikTok. Tidak perlu login hanya untuk *membaca* chat.
@@ -37,9 +47,11 @@ penonton sudah follow. Pertanyaan diambil dari API gratis
    - `roundDurationSec`: berapa lama penonton punya waktu menjawab tiap pertanyaan.
    - `revealDurationSec`: berapa lama jawaban benar ditampilkan di layar.
    - `leaderboardEveryNQuestions`: `10` berarti papan peringkat muncul setiap pertanyaan ke-10.
-   - `pointsForFirstCorrect`: poin untuk penonton pertama yang benar dan sudah follow.
+   - `pointsForCorrect`: poin dasar untuk setiap penonton yang jawabannya benar dan sudah follow.
+   - `fastestBonus`: poin bonus tambahan untuk penonton **tercepat** yang benar (di atas poin dasar).
    - `requireFollowToScore`: `true` = harus follow dulu untuk dapat poin.
    - `trivia`: langsung diteruskan ke Open Trivia DB (`category`/`difficulty` boleh dikosongkan untuk "semua").
+   - `eventDelaySec`: video LIVE TikTok yang dilihat penonton punya buffer beberapa detik, sedangkan komentar/like/gift diterima server ini secara real-time. Isi dengan jeda (detik) yang kamu amati di stream-mu supaya reaksi overlay (jawaban, klu, dsb) baru muncul setelah delay itu — jadi sinkron dengan video yang penonton lihat. `0` = tidak ada jeda tambahan.
 4. **Live dulu di TikTok**, baru jalankan game-nya:
    ```
    npm start
@@ -54,12 +66,37 @@ penonton sudah follow. Pertanyaan diambil dari API gratis
 
 - Menjawab dengan **huruf** (`A`, `B`, `C`, `D`), **angka** (`1`-`4`),
   atau teks jawabannya langsung — semuanya bisa dikenali.
-- Penonton pertama yang benar dan sudah follow dapat poin tiap ronde.
+- Setiap penonton yang benar dan sudah follow dapat poin dasar; yang **tercepat** dapat poin bonus tambahan.
 - `!myrank` kapan saja akan menampilkan peringkat dan skor penonton itu
   sebagai notifikasi di layar.
 - Kalau ada yang jawabannya benar tapi belum follow, overlay menampilkan
   "follow dulu untuk klaim poinmu!" — kalau dia follow sebelum ronde
   berakhir, dia tetap dapat poin (selama belum ada yang menang duluan).
+
+## Mulai kuis: kartu selamat datang
+
+- Begitu LIVE terhubung, overlay menampilkan kartu "selamat datang" dan kuis
+  **belum berjalan**. Ketik `!start` di chat live dari akun host (atau buka
+  `http://localhost:3000/start`) untuk menurunkan kartu dan menanyakan
+  pertanyaan pertama.
+- `!start` lagi tidak akan mengulang kalau kuis sudah berjalan. Kalau kuis
+  ke-start tidak sengaja, ketik `!welcome` (atau buka
+  `http://localhost:3000/welcome`) untuk menghentikan ronde yang sedang
+  berjalan tanpa menghitung skor dan menampilkan lagi kartu selamat datang —
+  `!start` untuk memulai ulang dari pertanyaan baru.
+- Kartu ini juga menampilkan **MVP live sebelumnya** (top skor kuis dan top
+  gifter), disimpan per room id TikTok di `data/session.json`. Begitu server
+  mendeteksi LIVE baru, live sebelumnya otomatis "ditutup" dan MVP-nya jadi
+  target yang harus dikalahkan penonton di live ini. Live yang terlalu sepi
+  (di bawah 10 poin kuis, atau di bawah 5 diamond/3 gift untuk top gifter)
+  tidak menggantikan MVP sebelumnya — supaya restart cepat untuk `!testing`
+  tidak mengubur juara beneran dengan "juara" satu gift receh.
+- Kalau Browser Source di OBS reconnect/reload di tengah ronde (atau baru
+  dibuka setelah ganti mode), pertanyaan yang sedang aktif langsung
+  ditampilkan ulang dengan sisa waktunya, bukan ikut kartu selamat datang.
+- Contoh tampilan tanpa live: `overlay.html?demo` sekarang dimulai dari
+  kartu selamat datang lalu lanjut otomatis; `overlay.html?demo=welcome`
+  menampilkan kartu itu saja.
 
 ## Mode Tebak Kata (`tebak.html`)
 
@@ -86,17 +123,83 @@ jadi mereka tahu berapa jumlah hurufnya.
 
 Cara memainkan:
 
-1. Di OBS, pakai Browser Source `http://localhost:3000/tebak.html` (bukan
-   `overlay.html`). Keduanya bisa disimpan di scene berbeda.
+1. Tidak perlu Browser Source terpisah — Browser Source `overlay.html` yang
+   sudah ada di OBS akan pindah sendiri ke `tebak.html` begitu mode diganti
+   (lihat bagian "Satu Browser Source saja sudah cukup" di atas).
 2. Pilih mode: ketik `!mode tebak` di chat dari akun host (atau buka
-   `http://localhost:3000/mode/tebak`). Kembali ke pilihan ganda dengan
-   `!mode pilihan`. Kalau kuis sedang berjalan, mode baru berlaku mulai soal
-   berikutnya. Mode awal saat server dijalankan diatur lewat `"mode"` di
-   `config.json`.
+   `http://localhost:3000/mode/tebak`). Kalau kuis sedang berjalan, mode
+   baru berlaku mulai soal berikutnya. Mode awal saat server dijalankan
+   diatur lewat `"mode"` di `config.json`.
 3. Atur di `config.json`: `"tebak": { "roundDurationSec": 30, "tapsPerClue": 50, "clueGift": "Rose" }`.
 
 Contoh tampilan tanpa live: `tebak.html?demo`, `tebak.html?demo=pause`,
 `tebak.html?demo=end`.
+
+## Mode Asosiasi Kata (`asosiasi.html`)
+
+Format ketiga: satu **tema** ("Berhubungan dengan Kopi") dan **6 kata** yang
+berhubungan ditampilkan sekaligus, masing-masing sebagai kotak-kotak huruf
+(huruf pertama tiap kata selalu terlihat). Penonton boleh menebak sebanyak
+mungkin dari 6 kata itu, bebas urutan.
+
+- **Harus follow untuk ikut main** — beda dari mode lain yang cuma
+  menggerbang poin, di sini komentar dari penonton yang belum pernah
+  terpantau follow **tidak diproses sama sekali** (tidak dicocokkan, tidak
+  bisa menang). Mereka dapat pesan "follow dulu untuk ikut main ya!" sekali
+  per penonton per live.
+- Tiap kata punya bonus poinnya sendiri, dikurasi manual sesuai kesulitan
+  (lihat `lib/asosiasi-id.js`). **Semua** penonton yang follow dan
+  menjawab benar dapat poin dasar (`asosiasi.basePoints`); yang
+  **tercepat** untuk kata itu dapat tambahan bonus kata tersebut.
+- Setiap `tapsPerClue` tap atau 1 `clueGift` (default Rose) membuka 1 huruf
+  acak dari gabungan huruf tersembunyi ke-6 kata sekaligus. Huruf terakhir
+  tiap kata tidak pernah dibuka otomatis.
+- Setiap percobaan jawaban (benar atau salah) memunculkan kartu kecil
+  (foto profil + nama) yang berjalan melintasi layar — murni umpan balik
+  visual, tidak membocorkan jawaban ke penonton lain.
+- `!mvpasosiasi` di chat host (atau `http://localhost:3000/mvp-asosiasi`)
+  menampilkan **Top 6** MVP kuis, bukan Top 3 seperti `!mvpkuis`.
+- Atur di `config.json`: `"asosiasi": { "roundDurationSec": 45, "tapsPerClue": 10, "clueGift": "Rose", "basePoints": 10, "mvpTopCount": 6 }`.
+
+Cara memainkan: cukup ketik `!mode asosiasi` di chat host — Browser Source
+yang sudah ada pindah sendiri ke `asosiasi.html`.
+
+Contoh tampilan tanpa live: `asosiasi.html?demo`, `asosiasi.html?demo=pause`,
+`asosiasi.html?demo=end`, `asosiasi.html?card=mvp-asosiasi`.
+
+## Mode Klu (`klu.html`)
+
+Kebalikan dari mode asosiasi, dan memakai **bank soal yang sama persis**
+(`lib/asosiasi-id.js`), cuma dibaca terbalik: temanya ("Kopi") jadi **kata
+jawaban tersembunyi**, dan 6 kata yang di mode asosiasi harus ditebak
+(Kafe, Latte, Espresso, ...) di sini jadi **6 klu pendek** yang dibuka
+satu per satu. Penonton mengetik tebakan kata jawabannya langsung di
+komentar, bukan menebak tiap klu satu-satu.
+
+- Jawabannya ditampilkan sebagai kotak-kotak huruf kosong, sama seperti
+  mode tebak, jadi penonton tahu jumlah hurufnya — tapi hurufnya sendiri
+  **tidak pernah** dibuka, cuma klu-nya yang bertambah.
+- Klu pertama selalu terlihat sejak ronde mulai. Setiap `tapsPerClue` tap
+  atau 1 `clueGift` (default Rose) membuka klu berikutnya secara berurutan,
+  sampai keenam klu terbuka (tidak ada yang disembunyikan selamanya, beda
+  dari huruf terakhir di mode tebak/asosiasi).
+- Poin: **semua** penonton yang benar (dan sudah follow, sesuai
+  `requireFollowToScore` — bukan gerbang partisipasi seperti mode
+  asosiasi) dapat poin dasar (`klu.basePoints`); yang **tercepat** dapat
+  tambahan bonus ronde itu, dihitung otomatis dari rata-rata bonus 6 kata
+  terkait di bank asosiasi (tema yang kata-katanya lebih susah ditebak
+  dapat bonus lebih besar).
+- Tiker nama + foto profil penonton yang mencoba menjawab (benar/salah)
+  berjalan melintasi layar, sama seperti mode asosiasi.
+- Tidak ada kartu MVP terpisah untuk mode ini — pakai `!mvpkuis` seperti
+  mode tebak/pilihan ganda (Top 3).
+- Atur di `config.json`: `"klu": { "roundDurationSec": 30, "tapsPerClue": 10, "clueGift": "Rose", "basePoints": 10 }`.
+
+Cara memainkan: cukup ketik `!mode klu` di chat host — Browser Source yang
+sudah ada pindah sendiri ke `klu.html`.
+
+Contoh tampilan tanpa live: `klu.html?demo`, `klu.html?demo=pause`,
+`klu.html?demo=end`.
 
 ## Power-up dari gift
 
@@ -204,10 +307,15 @@ tiktok-live-quiz/
 │  ├─ questions-id.js        # bank soal Bahasa Indonesia
 │  ├─ questionRotation.js    # membagi bank soal jadi 3 blok, satu blok per live
 │  ├─ wordGame.js            # aturan mode tebak kata (huruf, clue, cocokkan jawaban)
+│  ├─ asosiasi-id.js         # bank tema + 6 kata terkait (dipakai juga oleh mode klu, dibaca terbalik)
+│  ├─ asosiasiGame.js        # aturan mode asosiasi kata (6 kata sekaligus, gerbang follow, tiker)
+│  ├─ kluGame.js             # aturan mode klu (kebalikan asosiasi: 1 kata jawaban, 6 klu berurutan)
 │  └─ scores.js              # papan peringkat tersimpan (data/scores.json)
 └─ public/
    ├─ overlay.html          # overlay pilihan ganda (browser source OBS)
-   └─ tebak.html            # overlay tebak kata (browser source OBS)
+   ├─ tebak.html            # overlay tebak kata (browser source OBS)
+   ├─ asosiasi.html         # overlay asosiasi kata (browser source OBS)
+   └─ klu.html              # overlay klu (browser source OBS)
 ```
 
 ## Kustomisasi
