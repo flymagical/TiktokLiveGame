@@ -1,15 +1,43 @@
 {
   "tiktokUsername": "flymagical330",
   "port": 3000,
+  "eventDelaySec": 0,
   "roundDurationSec": 15,
   "revealDurationSec": 10,
   "leaderboardDurationSec": 10,
   "leaderboardEveryNQuestions": 3,
-  "pointsForFirstCorrect": 20,
+  "pointsForCorrect": 10,
+  "fastestBonus": 10,
   "requireFollowToScore": true,
   "trivia": "",
   "mode": "pilihan",
   "tebak": { "roundDurationSec": 30, "tapsPerClue": 10, "clueGift": "Rose" },
+  "asosiasi": {
+    "roundDurationSec": 45,
+    "tapsPerClue": 10,
+    "clueGift": "Rose",
+    "basePoints": 10,
+    "mvpTopCount": 6
+  },
+  "klu": {
+    "roundDurationSec": 30,
+    "tapsPerClue": 10,
+    "clueGift": "Rose",
+    "basePoints": 10
+  },
+  "arena": {
+    "lobbyDurationSec": 20,
+    "tickSec": 4,
+    "slotsPerTier": 8,
+    "maxPlayers": 24,
+    "shrinkEverySec": 30,
+    "earlyShrinkBelow": 10,
+    "maxRoundSec": 180,
+    "basePoints": 5,
+    "tierBonus": 10,
+    "winBonus": 50,
+    "pointsPerDiamond": 2
+  },
   "powerUps": {
     "fiftyFifty": { "gift": "Finger Heart" },
     "freezeTimer": { "gift": "Ice Cream Cone", "addSec": 5, "maxPerRound": 3 },

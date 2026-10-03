@@ -1752,21 +1752,40 @@
       window.__lastLeaderboard = top;
     });
 
-    // Tebak kata is drawn by tebak.html, so the OBS source follows the host's
-    // !mode tebak there by itself (cards and demos stay put).
+    // Tebak kata / asosiasi kata are drawn by their own HTML files, so the
+    // OBS source follows the host's !mode there by itself (cards and demos
+    // stay put).
     function goToTebak() {
       if (cardOnly || params.has("demo")) return;
       location.replace("tebak.html" + location.search);
     }
+    function goToAsosiasi() {
+      if (cardOnly || params.has("demo")) return;
+      location.replace("asosiasi.html" + location.search);
+    }
+    function goToKlu() {
+      if (cardOnly || params.has("demo")) return;
+      location.replace("klu.html" + location.search);
+    }
+    function goToArena() {
+      if (cardOnly || params.has("demo")) return;
+      location.replace("arena.html" + location.search);
+    }
 
     socket.on("game:config", ({ powerUps, goal, mode }) => {
       if (mode === "tebak") return goToTebak();
+      if (mode === "asosiasi") return goToAsosiasi();
+      if (mode === "klu") return goToKlu();
+      if (mode === "arena") return goToArena();
       renderPowerUps(powerUps);
       renderGoal(goal);
     });
 
     socket.on("game:state", (payload) => {
       if (payload.type === "wordQuestion") return goToTebak();
+      if (payload.type === "associationQuestion") return goToAsosiasi();
+      if (payload.type === "kluQuestion") return goToKlu();
+      if (payload.type === "arenaLobby") return goToArena();
       handleState(payload);
     });
     // Last live's quiz MVP and gift MVP, e.g. "MVP kuis live lalu: X · 300 poin".
@@ -1919,8 +1938,12 @@
             const w = payload.winner;
             winnerBanner.className = "winner-banner pop";
             const bonusNote = w.multiplier > 1 ? ` ⚡${w.multiplier}×` : "";
-            winnerBanner.textContent = `🏆 @${w.nickname} menjawab ${payload.correctLetter} benar pertama kali! +${w.pointsAwarded} poin${bonusNote} (total ${w.score})`;
+            const breakdown = w.bonusPoints ? ` (${w.basePoints}+${w.bonusPoints} tercepat)` : "";
+            winnerBanner.textContent = `🏆 @${w.nickname} menjawab ${payload.correctLetter} benar pertama kali! +${w.pointsAwarded} poin${breakdown}${bonusNote} (total ${w.score})`;
             showToast(`🎉 Selamat @${w.nickname}! Kamu yang pertama menjawab benar: ${payload.correctLetter}. ${payload.correctText}`, false, "winner");
+            if (w.otherCorrect) {
+              showToast(`+${w.basePoints} poin juga diberikan ke ${w.otherCorrect} penjawab benar lainnya!`, false);
+            }
             Sfx.winner();
             burstFrom(winnerBanner, { count: 140, speed: 16 });
             // Side cannons from the bottom corners.

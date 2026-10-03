@@ -30,12 +30,12 @@ async function main() {
   // Push every game state change straight to the overlay.
   game.on("state", (payload) => {
     io.emit("game:state", payload);
-    if (payload.type === "question" || payload.type === "wordQuestion") {
+    if (["question", "wordQuestion", "associationQuestion", "kluQuestion"].includes(payload.type)) {
       activeQuestion = { payload, askedAt: Date.now() };
-    } else if (["reveal", "wordReveal", "leaderboard", "endCard", "welcome"].includes(payload.type)) {
+    } else if (["reveal", "wordReveal", "associationReveal", "kluReveal", "leaderboard", "endCard", "welcome"].includes(payload.type)) {
       activeQuestion = null;
     }
-    if (payload.type === "answer" || payload.type === "taps") return; // too chatty to log
+    if (["answer", "taps", "associationAttempt", "kluAttempt", "arenaTick"].includes(payload.type)) return; // too chatty to log
     const detail =
       payload.type === "question" ? payload.question :
       payload.type === "reveal"
@@ -43,6 +43,7 @@ async function main() {
           (payload.winner ? `pemenang: ${payload.winner.nickname} +${payload.winner.pointsAwarded}` : "tidak ada pemenang")
         :
       payload.type === "followAlert" || payload.type === "powerUp" ? payload.message :
+      payload.type === "followGateBlocked" ? `@${payload.nickname} belum follow — diblokir ikut main` :
       payload.type === "goal" ? `${payload.count}/${payload.target}${payload.justReached ? " TERCAPAI!" : ""}` :
       payload.type === "mvp"
         ? `${payload.kind}: ${payload.mvp ? payload.mvp.nickname : payload.kind === "quiz" ? "belum ada pemain" : "belum ada gifter"}` :
@@ -52,10 +53,36 @@ async function main() {
         ? `jawaban: ${payload.answer} — ` +
           (payload.winner ? `pemenang: ${payload.winner.nickname} +${payload.winner.pointsAwarded}` : "tidak ada pemenang")
         :
+      payload.type === "associationQuestion" ? `${payload.theme} (6 kata)` :
+      payload.type === "associationClue" ? `kata #${payload.wordIndex + 1} huruf ke-${payload.letterIndex + 1} dibuka (${payload.source})` :
+      payload.type === "associationReveal"
+        ? payload.words.map((w) => `${w.text}${w.winner ? ` → ${w.winner.nickname} +${w.winner.pointsAwarded}` : " → tidak ada"}`).join("; ")
+        :
+      payload.type === "kluQuestion" ? `klu 1/6: ${payload.clues[0]}` :
+      payload.type === "kluClue" ? `klu ke-${payload.index + 1} dibuka (${payload.source}): ${payload.text}` :
+      payload.type === "kluReveal"
+        ? `jawaban: ${payload.answer} — ` +
+          (payload.winner ? `pemenang: ${payload.winner.nickname} +${payload.winner.pointsAwarded}` : "tidak ada pemenang")
+        :
       payload.type === "welcome" ? "kartu selamat datang tampil — ketik !start untuk mulai" :
-      payload.type === "mode" ? `${payload.mode}${payload.pending ? " (mulai soal berikutnya)" : ""}` : "";
+      payload.type === "mode" ? `${payload.mode}${payload.pending ? " (mulai soal berikutnya)" : ""}` :
+      payload.type === "arenaLobby" ? `ronde ${game.arena.roundNumber} — lobi ${payload.durationSec}s` :
+      payload.type === "arenaShrink" ? `tier ${payload.tierRemoved} runtuh, ${payload.eliminated.length} tersingkir` :
+      payload.type === "arenaEliminated" ? `@${payload.nickname} tersingkir (${payload.cause})` :
+      payload.type === "arenaReveal"
+        ? (payload.winners.length ? payload.winners.map((w) => `${w.nickname} +${w.pointsAwarded}`).join(", ") : "seri, tidak ada yang menang")
+        :
+      payload.type === "arenaGiftPoints" ? `@${payload.nickname} +${payload.pointsAwarded} poin dukungan` : "";
     console.log(`[kuis] ${payload.type}`, detail);
   });
+
+  // TikTok's video broadcast is buffered several seconds before viewers see
+  // it, while chat/gift/like events arrive here in real time. Without this,
+  // the overlay reacts to comments long before the audience's delayed video
+  // shows them being made. Set eventDelaySec in config.json to your stream's
+  // observed delay so overlay reactions line up with what viewers see.
+  const eventDelayMs = Math.max(0, Number(config.eventDelaySec) || 0) * 1000;
+  const delayed = (fn) => (eventDelayMs > 0 ? setTimeout(fn, eventDelayMs) : fn());
 
   // "Live bentar aja, testing" mark on the overlay, toggled by the host with
   // !testing. Off again after a server restart.
@@ -95,12 +122,12 @@ async function main() {
     res.type("text/plain").send(game.resume() ? "Kuis dilanjutkan." : "Kuis tidak sedang dijeda.");
   });
 
-  // Switch the game format: /mode/tebak or /mode/pilihan (same as !mode).
+  // Switch the game format: /mode/tebak, /mode/pilihan, /mode/asosiasi, /mode/klu or /mode/arena (same as !mode).
   app.get("/mode/:mode", (req, res) => {
     const ok = game.setMode(req.params.mode);
     res.type("text/plain").send(ok
       ? `Mode ${req.params.mode} dipilih (berlaku mulai soal berikutnya kalau kuis sedang berjalan).`
-      : "Mode tidak dikenal. Pilih: tebak atau pilihan.");
+      : "Mode tidak dikenal. Pilih: tebak, pilihan, asosiasi, klu, atau arena.");
   });
 
   app.get("/testing", (req, res) => {
@@ -132,6 +159,11 @@ async function main() {
     res.type("text/plain").send("Kartu MVP kuis ditampilkan di overlay.");
   });
 
+  app.get("/mvp-asosiasi", (req, res) => {
+    game.showMvp("quiz", { count: game.asosiasi.mvpTopCount });
+    res.type("text/plain").send("Kartu Top 6 MVP asosiasi ditampilkan di overlay.");
+  });
+
   // Data for the shareable cards (overlay.html?card=...). ?limit=1..10, default 3.
   const limitOf = (req) => Math.min(10, Math.max(1, Number(req.query.limit) || 3));
   app.get("/api/top-gifters", (req, res) => res.json(scoreboard.getTopGifters(limitOf(req))));
@@ -142,6 +174,13 @@ async function main() {
   app.get("/reset-gifters", (req, res) => {
     scoreboard.resetGifters();
     res.type("text/plain").send("Daftar Top Gifter sudah di-reset.");
+  });
+
+  // Wipe the all-time quiz leaderboard. Unlike gifters this never resets on
+  // its own, so use with care — every viewer's score goes back to zero.
+  app.get("/reset-scores", (req, res) => {
+    scoreboard.resetScores();
+    res.type("text/plain").send("Papan peringkat skor sudah di-reset.");
   });
 
   tiktok.on("connected", ({ roomId }) => {
@@ -158,15 +197,20 @@ async function main() {
   tiktok.on("comment", (data) => {
     console.log(`[komentar] ${data.nickname}${data.isFollower ? " (follower)" : ""}: ${data.comment}`);
     // The host types !start to begin the quiz (a welcome card shows until
-    // then; !welcome brings it back if the quiz started by accident). The host can also type !mvp (top gifter) or !mvpkuis (top quiz score) in
-    // their own chat to show the matching MVP card, or !peringkat for the
-    // leaderboard, !pause / !lanjut to pause and resume the quiz, !testing to
-    // toggle the "just testing" mark, !mode tebak / !mode pilihan to switch the
+    // then; !welcome brings it back if the quiz started by accident). The host can also type !mvp (top gifter), !mvpkuis (top 3 quiz score) or
+    // !mvpasosiasi (top 6 quiz score) in their own chat to show the matching
+    // MVP card, or !peringkat for the leaderboard, !pause / !lanjut to pause
+    // and resume the quiz, !testing to toggle the "just testing" mark,
+    // !mode tebak / !mode pilihan / !mode asosiasi / !mode klu / !mode arena to switch the
     // game format, or !end for the closing thank-you card.
     const isHost = data.username && data.username.toLowerCase() === config.tiktokUsername.toLowerCase();
     const command = (data.comment || "").trim().toLowerCase();
     if (isHost && (command === "!mvp" || command === "!mvpkuis")) {
       game.showMvp(command === "!mvpkuis" ? "quiz" : "gifter");
+      return;
+    }
+    if (isHost && command === "!mvpasosiasi") {
+      game.showMvp("quiz", { count: game.asosiasi.mvpTopCount });
       return;
     }
     if (isHost && command === "!peringkat") {
@@ -185,7 +229,7 @@ async function main() {
       if (!game.begin()) console.log("[kuis] !start diabaikan: kuis sudah berjalan atau belum terhubung ke LIVE");
       return;
     }
-    const modeCommand = command.match(/^!mode (tebak|pilihan)$/);
+    const modeCommand = command.match(/^!mode (tebak|pilihan|asosiasi|klu|arena)$/);
     if (isHost && modeCommand) {
       game.setMode(modeCommand[1]);
       return;
@@ -202,23 +246,27 @@ async function main() {
       game.resume();
       return;
     }
-    game.handleComment(data);
+    delayed(() => game.handleComment(data));
   });
 
   tiktok.on("follow", (data) => {
-    console.log(`[follow] ${data.nickname} melakukan follow`);
-    game.handleFollow(data);
-    io.emit("thanks", { kind: "follow", nickname: data.nickname });
+    delayed(() => {
+      console.log(`[follow] ${data.nickname} melakukan follow`);
+      game.handleFollow(data);
+      io.emit("thanks", { kind: "follow", nickname: data.nickname });
+    });
   });
 
   tiktok.on("gift", (data) => {
-    console.log(`[gift] ${data.nickname} mengirim ${data.giftName} x${data.count} (${data.diamonds} koin)`);
-    io.emit("thanks", { kind: "gift", nickname: data.nickname, giftName: data.giftName, count: data.count, image: data.image });
-    game.handleGift(data);
+    delayed(() => {
+      console.log(`[gift] ${data.nickname} mengirim ${data.giftName} x${data.count} (${data.diamonds} koin)`);
+      io.emit("thanks", { kind: "gift", nickname: data.nickname, giftName: data.giftName, count: data.count, image: data.image });
+      game.handleGift(data);
+    });
   });
 
   // Taps only matter in tebak mode, where they unlock letter clues.
-  tiktok.on("like", (data) => game.handleLike(data));
+  tiktok.on("like", (data) => delayed(() => game.handleLike(data)));
 
   tiktok.on("disconnected", (info) => {
     console.warn("Terputus dari TikTok LIVE:", info || "");

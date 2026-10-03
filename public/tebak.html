@@ -1917,10 +1917,28 @@
       if (cardOnly || isDemo) return showModeNote();
       location.replace("overlay.html" + location.search);
     }
+    function goToAsosiasi() {
+      if (cardOnly || isDemo) return showModeNote();
+      location.replace("asosiasi.html" + location.search);
+    }
+    function goToKlu() {
+      if (cardOnly || isDemo) return showModeNote();
+      location.replace("klu.html" + location.search);
+    }
+    function goToArena() {
+      if (cardOnly || isDemo) return showModeNote();
+      location.replace("arena.html" + location.search);
+    }
+    function goToOtherMode(mode) {
+      if (mode === "asosiasi") return goToAsosiasi();
+      if (mode === "klu") return goToKlu();
+      if (mode === "arena") return goToArena();
+      return goToPilihan();
+    }
 
     socket.on("game:config", ({ powerUps, goal, mode }) => {
       if (isDemo) return;
-      if (mode && mode !== "tebak" && !cardOnly) return goToPilihan();
+      if (mode && mode !== "tebak" && !cardOnly) return goToOtherMode(mode);
       renderPowerUps(powerUps);
       renderGoal(goal);
     });
@@ -1979,9 +1997,6 @@
         case "wordClue": {
           const l = payload.letters[payload.index];
           revealTile(payload.index, l.ch);
-          if (payload.source === "taps") {
-            showToast(`👆 ${tapsPerClue} tap tercapai! 1 huruf terbuka`, false, "power");
-          }
           Sfx.fiftyFifty();
           break;
         }
@@ -1998,8 +2013,9 @@
             showToast(payload.pending ? "🔤 Tebak kata dimulai soal berikutnya!" : "🔤 Mode tebak kata aktif!", false, "power");
             if (!payload.pending) showWaiting();
           } else {
-            showToast(payload.pending ? "🔠 Pilihan ganda dimulai soal berikutnya!" : "🔠 Mode pilihan ganda aktif!", false);
-            if (!payload.pending) goToPilihan();
+            const label = payload.mode === "asosiasi" ? "Asosiasi kata" : payload.mode === "klu" ? "Klu" : payload.mode === "arena" ? "Arena Tabrak" : "Pilihan ganda";
+            showToast(payload.pending ? `🧩 ${label} dimulai ronde berikutnya!` : `🧩 Mode ${label} aktif!`, false);
+            if (!payload.pending) goToOtherMode(payload.mode);
           }
           Sfx.toast();
           break;
@@ -2007,6 +2023,21 @@
 
         case "question": {
           goToPilihan();
+          break;
+        }
+
+        case "associationQuestion": {
+          goToAsosiasi();
+          break;
+        }
+
+        case "kluQuestion": {
+          goToKlu();
+          break;
+        }
+
+        case "arenaLobby": {
+          goToArena();
           break;
         }
 
@@ -2101,8 +2132,12 @@
             const w = payload.winner;
             winnerBanner.className = "winner-banner pop";
             const bonusNote = w.multiplier > 1 ? ` ⚡${w.multiplier}×` : "";
-            winnerBanner.textContent = `🏆 @${w.nickname} menebak benar pertama kali! +${w.pointsAwarded} poin${bonusNote} (total ${w.score})`;
+            const breakdown = w.bonusPoints ? ` (${w.basePoints}+${w.bonusPoints} tercepat)` : "";
+            winnerBanner.textContent = `🏆 @${w.nickname} menebak benar pertama kali! +${w.pointsAwarded} poin${breakdown}${bonusNote} (total ${w.score})`;
             showToast(`🎉 Selamat @${w.nickname}! Jawabannya: ${payload.answer}`, false, "winner");
+            if (w.otherCorrect) {
+              showToast(`+${w.basePoints} poin juga diberikan ke ${w.otherCorrect} penjawab benar lainnya!`, false);
+            }
             Sfx.winner();
             burstFrom(winnerBanner, { count: 140, speed: 16 });
             setTimeout(() => {

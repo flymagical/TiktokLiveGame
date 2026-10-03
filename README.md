@@ -21,13 +21,15 @@ diambil dari API gratis [Open Trivia DB](https://opentdb.com).
 - **`public/overlay.html`** adalah yang kamu tambahkan ke OBS sebagai
   Browser Source — menampilkan pertanyaan, timer, jawaban, papan
   peringkat, dan notifikasi.
-- Ada 4 format kuis (lihat bagian masing-masing di bawah): **pilihan ganda**
+- Ada 5 format kuis (lihat bagian masing-masing di bawah): **pilihan ganda**
   (`overlay.html`, default), **tebak kata** (`tebak.html`), **asosiasi kata**
-  (`asosiasi.html`), dan **klu** (`klu.html`). Ganti kapan saja dengan
-  `!mode pilihan` / `!mode tebak` / `!mode asosiasi` / `!mode klu` di chat
-  host, atau lewat `http://localhost:3000/mode/<nama>`. **Satu Browser
-  Source saja sudah cukup**: keempat halaman saling berpindah otomatis saat
-  mode berganti, jadi kamu tidak perlu menambahkan 4 Browser Source di OBS.
+  (`asosiasi.html`), **klu** (`klu.html`), dan **Arena Tabrak**
+  (`arena.html`, mobil tabrak-tabrakan). Ganti kapan saja dengan
+  `!mode pilihan` / `!mode tebak` / `!mode asosiasi` / `!mode klu` /
+  `!mode arena` di chat host, atau lewat `http://localhost:3000/mode/<nama>`.
+  **Satu Browser Source saja sudah cukup**: kelima halaman saling berpindah
+  otomatis saat mode berganti, jadi kamu tidak perlu menambahkan banyak
+  Browser Source di OBS.
 - Saat LIVE baru terhubung, overlay menampilkan **kartu selamat datang** dan
   kuis belum berjalan sampai host mengetik `!start`. Lihat bagian "Mulai
   kuis" di bawah.
@@ -201,8 +203,56 @@ sudah ada pindah sendiri ke `klu.html`.
 Contoh tampilan tanpa live: `klu.html?demo`, `klu.html?demo=pause`,
 `klu.html?demo=end`.
 
+## Mode Arena Tabrak (`arena.html`)
+
+Format kelima, beda total dari empat mode kuis di atas: terinspirasi dari
+game battle royale mobil tabrak-tabrakan ("Bumper Brawl"), tapi
+**satu-satunya alat main penonton adalah komentar** — tidak perlu follow
+atau gift untuk ikut, dan gift di mode ini **cuma nambah poin pengirim**,
+tidak memengaruhi arena sama sekali (beda dari power-up gift di mode lain —
+lihat alasannya di `design-arena.md`).
+
+- **Ikut gratis, lewat komentar**: ketik `kiri`, `kanan`, `gas`, atau
+  `tabrak` (atau `1`-`4`) kapan saja selama lobi/ronde berjalan — komentar
+  valid pertamamu otomatis memasukkan mobilmu ke arena sekaligus jadi
+  gerakan pertamamu. Boleh ikut lagi kalau tersingkir, selama ronde belum
+  masuk sudden death.
+- **Kendali**: `kiri`/`kanan` menggeser mobil di cincinnya, `gas` maju ke
+  tier lebih aman (Luar → Tengah → Dalam), `tabrak` mendorong siapa pun yang
+  berbagi posisi denganmu keluar 1 tier (atau langsung ke laut kalau sudah
+  di tepi) — kalau tidak ada yang bisa ditabrak, `tabrak` berefek sama
+  seperti `gas`. Hanya komentar **terakhir** sebelum setiap "tick"
+  (`arena.tickSec`, default 4 detik) yang dipakai.
+- **Arena mengecil**: tier Luar runtuh duluan, lalu Tengah (mulai *sudden
+  death* — tidak ada lagi tempat mundur), dipercepat kalau sisa pemain
+  sudah sedikit (`arena.earlyShrinkBelow`). Mobil terakhir yang masih ada
+  menang.
+- **Poin**: setiap tersingkir dapat `arena.basePoints` + `arena.tierBonus`
+  dikali jumlah tier yang berhasil dilewati; pemenang dapat itu plus
+  `arena.winBonus` (dibagi rata kalau ronde berakhir seri karena batas
+  waktu `arena.maxRoundSec` dengan beberapa mobil tersisa). Tunduk ke
+  `requireFollowToScore` seperti mode pilihan ganda — follow cuma syarat
+  klaim poin, bukan syarat ikut main.
+- **Gift = poin dukungan saja**: gift apa pun yang masuk selama mode ini
+  aktif langsung dikonversi `diamond × arena.pointsPerDiamond` jadi poin
+  buat pengirim (toast "terima kasih" muncul di overlay), terlepas dari
+  status follow atau sedang ikut arena atau tidak — tidak ada power-up gift
+  di mode ini. Tap (like) juga tidak dipakai sama sekali.
+- Tidak ada perintah MVP terpisah — poinnya masuk papan peringkat yang
+  sama, jadi `!mvpkuis`/`!peringkat` yang sudah ada otomatis ikut
+  menghitungnya.
+- Atur di `config.json`: `"arena": { "lobbyDurationSec": 20, "tickSec": 4, "slotsPerTier": 8, "maxPlayers": 24, "shrinkEverySec": 30, "earlyShrinkBelow": 10, "maxRoundSec": 180, "basePoints": 5, "tierBonus": 10, "winBonus": 50, "pointsPerDiamond": 2 }`.
+
+Cara memainkan: cukup ketik `!mode arena` di chat host — Browser Source
+yang sudah ada pindah sendiri ke `arena.html`.
+
+Contoh tampilan tanpa live: `arena.html?demo`, `arena.html?demo=pause`,
+`arena.html?demo=end`.
+
 ## Power-up dari gift
 
+Berlaku di mode pilihan ganda/tebak/asosiasi/klu — **tidak berlaku di mode
+Arena Tabrak**, yang punya aturan gift sendiri (lihat bagian mode itu).
 Diatur di `config.json` → `powerUps`. Nama gift dicocokkan tanpa peduli
 huruf besar/kecil; kosongkan `"gift": ""` untuk mematikan satu power-up.
 Nama gift yang dikirim TikTok bisa kamu lihat di konsol (`[gift] X mengirim
@@ -303,7 +353,7 @@ tiktok-live-quiz/
 ├─ lib/
 │  ├─ tiktokClient.js      # menormalkan event TikTok LIVE
 │  ├─ trivia.js             # mengambil/membentuk pertanyaan dari Open Trivia DB
-│  ├─ game.js                # alur pertanyaan, skor, gate follow, !myrank
+│  ├─ game.js                # alur pertanyaan, skor, gate follow, !myrank, + logic Arena Tabrak (tick/tier/tabrak)
 │  ├─ questions-id.js        # bank soal Bahasa Indonesia
 │  ├─ questionRotation.js    # membagi bank soal jadi 3 blok, satu blok per live
 │  ├─ wordGame.js            # aturan mode tebak kata (huruf, clue, cocokkan jawaban)
@@ -315,7 +365,8 @@ tiktok-live-quiz/
    ├─ overlay.html          # overlay pilihan ganda (browser source OBS)
    ├─ tebak.html            # overlay tebak kata (browser source OBS)
    ├─ asosiasi.html         # overlay asosiasi kata (browser source OBS)
-   └─ klu.html              # overlay klu (browser source OBS)
+   ├─ klu.html              # overlay klu (browser source OBS)
+   └─ arena.html            # overlay Arena Tabrak (browser source OBS)
 ```
 
 ## Kustomisasi
